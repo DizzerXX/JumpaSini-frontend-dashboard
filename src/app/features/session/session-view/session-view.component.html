@@ -9,18 +9,18 @@
       <p class="error-icon">⚠️</p>
       <p class="error-text">{{ errorMessage() }}</p>
     </div>
-  } @else if (session(); as s) {
+  } @else if (session()) {
     <!-- Session header -->
     <div class="session-header">
       <div class="code-row">
         <span class="code-label">{{ strings.SESSION_CODE }}</span>
-        <span class="code">{{ s.shortCode | shortCode }}</span>
+        <span class="code">{{ session()!.shortCode | shortCode }}</span>
       </div>
 
       <div class="badges">
-        <span class="badge">{{ transportLabel(s.transportMode) }}</span>
-        <span class="badge">{{ venueLabel(s.venueType) }}</span>
-        @if (s.halalFilter) {
+        <span class="badge">{{ transportLabel(session()!.transportMode) }}</span>
+        <span class="badge">{{ venueLabel(session()!.venueType) }}</span>
+        @if (session()!.halalFilter) {
           <span class="badge badge--halal">✓ Halal</span>
         }
       </div>
@@ -52,14 +52,14 @@
     <div class="participants-section">
       <div class="section-header">
         <h2>{{ strings.PARTICIPANTS }}</h2>
-        <span class="count-badge">{{ s.participants.length }}/6</span>
+        <span class="count-badge">{{ session()!.participants.length }}/6</span>
       </div>
 
-      @for (participant of s.participants; track participant.id) {
+      @for (participant of session()!.participants; track participant.id) {
         <app-participant-card [participant]="participant" [showRemove]="false" />
       }
 
-      @if (s.participants.length === 0) {
+      @if (session()!.participants.length === 0) {
         <p class="empty-participants">No participants yet.</p>
       }
     </div>
