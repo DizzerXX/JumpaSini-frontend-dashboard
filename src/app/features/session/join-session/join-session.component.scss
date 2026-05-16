@@ -1,0 +1,142 @@
+.join-session {
+  max-width: 420px;
+  margin: 0 auto;
+  padding: 32px 16px 64px;
+}
+
+.header {
+  text-align: center;
+  margin-bottom: 28px;
+
+  .app-name {
+    font-size: 32px;
+    font-weight: 800;
+    color: var(--primary);
+  }
+
+  .tagline {
+    color: var(--text-muted);
+    font-size: 14px;
+    margin-top: 4px;
+  }
+}
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius);
+  padding: 28px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+
+  h2 {
+    font-size: 20px;
+    font-weight: 700;
+  }
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.field-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.code-input {
+  padding: 14px 16px;
+  border: 2px solid var(--border-color);
+  border-radius: var(--border-radius);
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: 4px;
+  text-align: center;
+  text-transform: uppercase;
+  outline: none;
+  transition: border-color 0.15s;
+
+  &:focus { border-color: var(--primary); }
+  &::placeholder {
+    font-size: 16px;
+    font-weight: 400;
+    letter-spacing: 2px;
+    color: var(--text-muted);
+  }
+}
+
+.error-msg {
+  font-size: 13px;
+  color: var(--error);
+  font-weight: 500;
+  padding: 10px 14px;
+  background: #fee2e2;
+  border-radius: 8px;
+}
+
+.btn-primary {
+  width: 100%;
+  padding: 14px;
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  border-radius: var(--border-radius);
+  font-size: 15px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: opacity 0.15s;
+
+  &:disabled { opacity: 0.45; cursor: not-allowed; }
+}
+
+.btn-outline {
+  width: 100%;
+  padding: 13px;
+  background: transparent;
+  color: var(--primary);
+  border: 2px solid var(--primary);
+  border-radius: var(--border-radius);
+  font-size: 14px;
+  font-weight: 600;
+  transition: background 0.15s;
+
+  &:hover { background: #fff5f5; }
+}
+
+.divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: var(--text-muted);
+  font-size: 13px;
+
+  &::before, &::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border-color);
+  }
+}
+
+.spinner {
+  width: 18px;
+  height: 18px;
+  border: 2px solid rgba(255,255,255,0.4);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  display: inline-block;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}

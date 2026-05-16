@@ -1,0 +1,213 @@
+<div class="create-session">
+  <!-- Header -->
+  <div class="header">
+    <h1 class="app-name">{{ strings.APP_NAME }}</h1>
+    <p class="tagline">{{ strings.TAGLINE }}</p>
+  </div>
+
+  <!-- Step indicators -->
+  <div class="steps">
+    @for (step of [1, 2, 3]; track step) {
+      <div class="step" [class.active]="currentStep() === step" [class.done]="currentStep() > step">
+        <span class="step-num">{{ currentStep() > step ? '✓' : step }}</span>
+      </div>
+      @if (step < 3) {
+        <div class="step-line" [class.done]="currentStep() > step"></div>
+      }
+    }
+  </div>
+
+  <!-- Error banner -->
+  @if (errorMessage()) {
+    <div class="error-banner">{{ errorMessage() }}</div>
+  }
+
+  <!-- ─── Step 1: Session Setup ─── -->
+  @if (currentStep() === 1) {
+    <div class="card">
+      <h2>{{ strings.SETUP_MEETUP }}</h2>
+
+      <section class="form-section">
+        <label class="section-label">{{ strings.HOW_WILL_YOU_TRAVEL }}</label>
+        <app-transport-selector
+          [selected]="transportMode()"
+          (selectedChange)="onTransportChange($event)"
+        />
+      </section>
+
+      <section class="form-section">
+        <label class="section-label">{{ strings.WHAT_ARE_YOU_LOOKING_FOR }}</label>
+        <app-venue-type-selector
+          [selected]="venueType()"
+          (selectedChange)="onVenueChange($event)"
+        />
+      </section>
+
+      @if (showHalalFilter()) {
+        <section class="form-section halal-row">
+          <label class="section-label" for="halal-toggle">{{ strings.HALAL_ONLY }}</label>
+          <label class="toggle">
+            <input
+              id="halal-toggle"
+              type="checkbox"
+              [checked]="halalFilter()"
+              (change)="halalFilter.set($any($event.target).checked)"
+            />
+            <span class="slider"></span>
+          </label>
+        </section>
+      }
+
+      <div class="actions">
+        <button class="btn-secondary" type="button" (click)="navigateToJoin()">
+          {{ strings.JOIN_MEETUP }}
+        </button>
+        <button
+          class="btn-primary"
+          type="button"
+          [disabled]="!canProceedStep1()"
+          (click)="goToStep2()"
+        >
+          {{ strings.NEXT }}
+        </button>
+      </div>
+    </div>
+  }
+
+  <!-- ─── Step 2: Add Participants ─── -->
+  @if (currentStep() === 2) {
+    <div class="card">
+      <h2>{{ strings.ADD_PARTICIPANTS }}</h2>
+      <p class="subtitle">{{ strings.ADD_PARTICIPANTS_SUBTITLE }}</p>
+
+      <!-- Participant list -->
+      @if (localParticipants().length > 0) {
+        <div class="participant-list">
+          @for (p of localParticipants(); track $index) {
+            <div class="local-participant">
+              <div class="p-info">
+                <strong>{{ p.name || 'Anonymous' }}</strong>
+                <span>{{ p.address.length > 40 ? (p.address | slice:0:40) + '…' : p.address }}</span>
+              </div>
+              <button class="remove-local" type="button" (click)="removeLocalParticipant($index)">✕</button>
+            </div>
+          }
+        </div>
+        <p class="count-label">
+          {{ localParticipants().length }} / {{ 6 }} {{ strings.PARTICIPANTS_COUNT }}
+        </p>
+      }
+
+      @if (!isFull()) {
+        <!-- Add participant form -->
+        <div class="add-form">
+          <input
+            class="input"
+            type="text"
+            [placeholder]="strings.YOUR_NAME"
+            [ngModel]="participantName()"
+            (ngModelChange)="participantName.set($event)"
+          />
+
+          <!-- Location search -->
+          <div class="search-wrap">
+            <input
+              class="input"
+              type="text"
+              [placeholder]="strings.SEARCH_LOCATION"
+              [value]="selectedLocation()?.address ?? ''"
+              (input)="onSearchInput($any($event.target).value)"
+            />
+            @if (isLoadingLocation()) {
+              <span class="search-spinner">⟳</span>
+            }
+            @if (showSuggestions()) {
+              <ul class="suggestions">
+                @for (s of suggestions(); track s.placeId) {
+                  <li (click)="selectSuggestion(s)">
+                    <strong>{{ s.primaryText }}</strong>
+                    <span>{{ s.secondaryText }}</span>
+                  </li>
+                }
+              </ul>
+            }
+          </div>
+
+          <button class="btn-outline" type="button" (click)="useCurrentLocation()">
+            📍 {{ strings.USE_CURRENT_LOCATION }}
+          </button>
+
+          @if (selectedLocation()) {
+            <p class="location-selected">
+              ✓ {{ selectedLocation()!.address }}
+            </p>
+          }
+
+          <button
+            class="btn-secondary"
+            type="button"
+            [disabled]="!selectedLocation()"
+            (click)="addParticipant()"
+          >
+            {{ strings.ADD_PARTICIPANT }}
+          </button>
+        </div>
+      } @else {
+        <p class="max-msg">{{ strings.MAX_PARTICIPANTS_MSG }}</p>
+      }
+
+      @if (localParticipants().length < 2) {
+        <p class="min-msg">{{ strings.MIN_PARTICIPANTS_MSG }}</p>
+      }
+
+      <div class="actions">
+        <button class="btn-ghost" type="button" (click)="currentStep.set(1)">
+          ← {{ strings.BACK }}
+        </button>
+        <button
+          class="btn-primary"
+          type="button"
+          [disabled]="!canProceedStep2() || isSubmitting()"
+          (click)="findMeetupSpot()"
+        >
+          @if (isSubmitting()) {
+            <span class="spinner"></span>
+          } @else {
+            {{ strings.FIND_MEETUP_SPOT }}
+          }
+        </button>
+      </div>
+    </div>
+  }
+
+  <!-- ─── Step 3: Share Link ─── -->
+  @if (currentStep() === 3) {
+    <div class="card share-card">
+      <h2>🎉 Session Created!</h2>
+
+      <div class="code-box">
+        <p class="code-label">{{ strings.SESSION_CODE }}</p>
+        <p class="code">{{ createdShortCode() | shortCode }}</p>
+        <p class="code-hint">{{ strings.SHARE_CODE }}</p>
+      </div>
+
+      @if (qrCodeDataUrl()) {
+        <img class="qr" [src]="qrCodeDataUrl()" alt="QR code for this session" width="200" height="200" />
+      }
+
+      <div class="share-url">
+        <span class="url-label">{{ strings.SHAREABLE_LINK }}</span>
+        <div class="url-row">
+          <code class="url">{{ shareableUrl() }}</code>
+          <button class="btn-outline copy-btn" type="button" (click)="copyLink()">
+            {{ linkCopied() ? '✓ Copied!' : strings.COPY_LINK }}
+          </button>
+        </div>
+      </div>
+
+      <button class="btn-primary full-width" type="button" (click)="continueToResults()">
+        {{ strings.CONTINUE_TO_RESULTS }}
+      </button>
+    </div>
+  }
+</div>

@@ -1,0 +1,67 @@
+<div class="session-view">
+  @if (isLoading()) {
+    <div class="loading">
+      <div class="spinner-lg"></div>
+      <p>Loading session…</p>
+    </div>
+  } @else if (errorMessage()) {
+    <div class="error-state">
+      <p class="error-icon">⚠️</p>
+      <p class="error-text">{{ errorMessage() }}</p>
+    </div>
+  } @else if (session(); as s) {
+    <!-- Session header -->
+    <div class="session-header">
+      <div class="code-row">
+        <span class="code-label">{{ strings.SESSION_CODE }}</span>
+        <span class="code">{{ s.shortCode | shortCode }}</span>
+      </div>
+
+      <div class="badges">
+        <span class="badge">{{ transportLabel(s.transportMode) }}</span>
+        <span class="badge">{{ venueLabel(s.venueType) }}</span>
+        @if (s.halalFilter) {
+          <span class="badge badge--halal">✓ Halal</span>
+        }
+      </div>
+    </div>
+
+    <!-- Map -->
+    @if (markerPositions().length > 0) {
+      <div class="map-wrap">
+        <google-map
+          width="100%"
+          height="360px"
+          [center]="mapCenter()"
+          [options]="mapOptions"
+        >
+          @for (pos of markerPositions(); track pos.lat) {
+            <map-marker [position]="pos" />
+          }
+        </google-map>
+      </div>
+    }
+
+    <!-- Results placeholder -->
+    <div class="results-placeholder">
+      <div class="pulse-icon">📍</div>
+      <p>{{ strings.CALCULATING_SPOT }}</p>
+    </div>
+
+    <!-- Participants -->
+    <div class="participants-section">
+      <div class="section-header">
+        <h2>{{ strings.PARTICIPANTS }}</h2>
+        <span class="count-badge">{{ s.participants.length }}/6</span>
+      </div>
+
+      @for (participant of s.participants; track participant.id) {
+        <app-participant-card [participant]="participant" [showRemove]="false" />
+      }
+
+      @if (s.participants.length === 0) {
+        <p class="empty-participants">No participants yet.</p>
+      }
+    </div>
+  }
+</div>

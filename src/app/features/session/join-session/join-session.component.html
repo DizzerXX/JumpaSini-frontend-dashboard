@@ -1,0 +1,51 @@
+<div class="join-session">
+  <div class="header">
+    <h1 class="app-name">{{ strings.APP_NAME }}</h1>
+    <p class="tagline">{{ strings.TAGLINE }}</p>
+  </div>
+
+  <div class="card">
+    <h2>{{ strings.JOIN_SESSION }}</h2>
+
+    <div class="field">
+      <label class="field-label" for="session-code">{{ strings.ENTER_SESSION_CODE }}</label>
+      <input
+        id="session-code"
+        class="code-input"
+        type="text"
+        [placeholder]="strings.SESSION_CODE_HINT"
+        maxlength="9"
+        [value]="sessionCode()"
+        (input)="onCodeInput($any($event.target).value)"
+        (keyup.enter)="join()"
+        autocomplete="off"
+        spellcheck="false"
+      />
+    </div>
+
+    @if (errorMessage()) {
+      <p class="error-msg">{{ errorMessage() }}</p>
+    }
+
+    <button
+      class="btn-primary"
+      type="button"
+      [disabled]="!sessionCode() || isLoading()"
+      (click)="join()"
+    >
+      @if (isLoading()) {
+        <span class="spinner"></span>
+      } @else {
+        {{ strings.JOIN }}
+      }
+    </button>
+
+    <div class="divider">
+      <span>or</span>
+    </div>
+
+    <button class="btn-outline" type="button" (click)="goToCreate()">
+      {{ strings.START_MEETUP }}
+    </button>
+  </div>
+</div>
