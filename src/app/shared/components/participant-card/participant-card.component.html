@@ -1,0 +1,14 @@
+<div class="participant-card">
+  <div class="avatar">{{ initials }}</div>
+
+  <div class="info">
+    <span class="name">{{ displayName }}</span>
+    <span class="address" [title]="participant.address">{{ truncatedAddress }}</span>
+  </div>
+
+  @if (showRemove) {
+    <button class="remove-btn" type="button" (click)="onRemove()" aria-label="Remove participant">
+      ✕
+    </button>
+  }
+</div>

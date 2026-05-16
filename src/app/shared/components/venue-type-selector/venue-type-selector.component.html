@@ -1,0 +1,13 @@
+<div class="venue-grid">
+  @for (option of options; track option.value) {
+    <button
+      type="button"
+      class="venue-option"
+      [class.active]="isSelected(option.value)"
+      (click)="select(option.value)"
+    >
+      <span class="emoji">{{ option.emoji }}</span>
+      <span class="label">{{ option.label }}</span>
+    </button>
+  }
+</div>
