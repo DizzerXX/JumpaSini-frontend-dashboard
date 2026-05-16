@@ -1,1 +1,53 @@
-/* You can add global styles to this file, and also import other style files */
+/* Global styles */
+
+:root {
+  --primary: #E8462A;
+  --secondary: #FFCC00;
+  --surface: #FFFFFF;
+  --text-primary: #1A1A1A;
+  --text-muted: #6B7280;
+  --border-radius: 12px;
+  --border-color: #E5E7EB;
+  --background: #F9FAFB;
+  --error: #DC2626;
+  --success: #16A34A;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html,
+body {
+  height: 100%;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-size: 16px;
+  line-height: 1.5;
+  color: var(--text-primary);
+  background-color: var(--background);
+  -webkit-font-smoothing: antialiased;
+}
+
+a {
+  color: var(--primary);
+  text-decoration: none;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
+button {
+  cursor: pointer;
+  font-family: inherit;
+}
+
+input,
+textarea,
+select {
+  font-family: inherit;
+}

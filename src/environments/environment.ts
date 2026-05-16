@@ -1,4 +1,5 @@
 export const environment = {
   production: true,
-  apiBaseUrl: 'https://api.jumpa-sini.com/api',
+  apiBaseUrl: 'http://localhost:8000/api/v1',
+  googleMapsApiKey: '',
 };
