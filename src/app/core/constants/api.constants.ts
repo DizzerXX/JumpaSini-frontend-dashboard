@@ -8,4 +8,9 @@ export const API_ENDPOINTS = {
   ADD_PARTICIPANT: (shortCode: string) => `${API_BASE_URL}/sessions/${shortCode}/participants`,
   REMOVE_PARTICIPANT: (shortCode: string, participantId: string) =>
     `${API_BASE_URL}/sessions/${shortCode}/participants/${participantId}`,
+  VOTES: (shortCode: string) => `${API_BASE_URL}/sessions/${shortCode}/votes`,
+  CONFIRM_VENUE: (shortCode: string) => `${API_BASE_URL}/sessions/${shortCode}/confirm`,
+  SESSION_SUMMARY: (shortCode: string) => `${API_BASE_URL}/sessions/${shortCode}/summary`,
+  RECOMMENDATION: (shortCode: string) => `${API_BASE_URL}/sessions/${shortCode}/recommendation`,
+  VENUES: (shortCode: string) => `${API_BASE_URL}/sessions/${shortCode}/venues`,
 } as const;

@@ -31,6 +31,9 @@ export interface SessionModel {
   expiresAt: string;
   participants: ParticipantModel[];
   createdAt: string | null;
+  shareableUrl: string | null;
+  sessionConfirmedVenue: string | null;
+  sessionConfirmedAt: string | null;
 }
 
 export interface CreateSessionPayload {
