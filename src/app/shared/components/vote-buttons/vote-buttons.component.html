@@ -1,0 +1,18 @@
+<div class="vote-buttons">
+  <button
+    class="vote-btn vote-btn--up"
+    [class.vote-btn--active]="optimisticVote() === 'up'"
+    (click)="vote('up')"
+    [attr.aria-label]="'Upvote ' + venueName"
+  >
+    👍 {{ optimisticUp() }}
+  </button>
+  <button
+    class="vote-btn vote-btn--down"
+    [class.vote-btn--active]="optimisticVote() === 'down'"
+    (click)="vote('down')"
+    [attr.aria-label]="'Downvote ' + venueName"
+  >
+    👎 {{ optimisticDown() }}
+  </button>
+</div>

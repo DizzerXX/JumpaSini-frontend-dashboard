@@ -1,0 +1,31 @@
+<div class="confirmed-venue">
+  <div class="confirmed-banner">
+    <span class="checkmark">✅</span>
+    <span class="banner-text">Meetup Confirmed!</span>
+  </div>
+
+  <div class="venue-details">
+    <h2 class="venue-name">{{ venue.name }}</h2>
+
+    @if (venue.address) {
+      <p class="venue-address">📍 {{ venue.address }}</p>
+    }
+
+    @if (venue.google_rating) {
+      <p class="venue-rating">⭐ {{ venue.google_rating | number: '1.1-1' }}</p>
+    }
+
+    @if (venue.is_halal) {
+      <span class="halal-badge">✓ Halal{{ venue.is_halal_verified ? ' (Verified)' : '' }}</span>
+    }
+
+    <a
+      class="maps-btn"
+      [href]="mapsUrl"
+      target="_blank"
+      rel="noopener noreferrer"
+    >
+      🗺️ Open in Google Maps
+    </a>
+  </div>
+</div>

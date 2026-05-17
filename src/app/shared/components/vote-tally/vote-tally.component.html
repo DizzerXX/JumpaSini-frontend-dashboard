@@ -1,0 +1,24 @@
+@if (rows().length > 0) {
+  <div class="vote-tally">
+    <h3 class="tally-title">Vote Tally</h3>
+    @for (row of rows(); track row.placeId) {
+      <div class="tally-row">
+        <div class="tally-header">
+          <span class="venue-name">{{ row.venueName }}</span>
+          <span class="vote-counts">
+            <span class="up">👍 {{ row.upVotes }}</span>
+            <span class="down">👎 {{ row.downVotes }}</span>
+          </span>
+        </div>
+        <div class="progress-track">
+          <div
+            class="progress-bar"
+            [class.progress-bar--positive]="row.upVotes >= row.downVotes"
+            [class.progress-bar--negative]="row.upVotes < row.downVotes"
+            [style.width.%]="row.ratio * 100"
+          ></div>
+        </div>
+      </div>
+    }
+  </div>
+}
