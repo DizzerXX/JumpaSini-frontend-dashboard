@@ -3,7 +3,6 @@ import { HttpClient } from '@angular/common/http';
 import { Observable, map } from 'rxjs';
 
 import { API_ENDPOINTS } from '../constants/api.constants';
-import { SessionModel } from '../models/session.model';
 import {
   VotePayload,
   VoteSummary,
@@ -56,13 +55,13 @@ export class CollaborationService {
   confirmVenue(
     shortCode: string,
     payload: ConfirmVenuePayload,
-  ): Observable<SessionModel> {
+  ): Observable<void> {
     return this.http
-      .post<ApiResponse<{ session: SessionModel }>>(
+      .post<ApiResponse<unknown>>(
         API_ENDPOINTS.CONFIRM_VENUE(shortCode),
         { google_place_id: payload.googlePlaceId },
       )
-      .pipe(map((res) => res.data.session));
+      .pipe(map(() => undefined));
   }
 
   getSessionSummary(shortCode: string): Observable<SessionSummary> {

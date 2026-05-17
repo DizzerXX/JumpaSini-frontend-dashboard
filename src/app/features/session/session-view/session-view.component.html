@@ -1,67 +1,197 @@
 <div class="session-view">
+
+  <!-- Loading -->
   @if (isLoading()) {
     <div class="loading">
       <div class="spinner-lg"></div>
       <p>Loading session…</p>
     </div>
+
+  <!-- Error -->
   } @else if (errorMessage()) {
     <div class="error-state">
       <p class="error-icon">⚠️</p>
       <p class="error-text">{{ errorMessage() }}</p>
     </div>
-  } @else if (session()) {
-    <!-- Session header -->
-    <div class="session-header">
-      <div class="code-row">
-        <span class="code-label">{{ strings.SESSION_CODE }}</span>
-        <span class="code">{{ session()!.shortCode | shortCode }}</span>
-      </div>
 
-      <div class="badges">
-        <span class="badge">{{ transportLabel(session()!.transportMode) }}</span>
-        <span class="badge">{{ venueLabel(session()!.venueType) }}</span>
-        @if (session()!.halalFilter) {
-          <span class="badge badge--halal">✓ Halal</span>
-        }
-      </div>
+  <!-- Completed session -->
+  } @else if (isComplete() && confirmedVenue()) {
+    <div class="live-header">
+      <span class="code-chip">{{ summary()!.session.short_code | shortCode }}</span>
+      <span class="status-chip status-chip--done">✓ Completed</span>
     </div>
 
-    <!-- Map -->
-    @if (markerPositions().length > 0) {
+    <app-confirmed-venue [venue]="confirmedVenue()!" />
+
+    @if (confirmedMarkerPosition()) {
       <div class="map-wrap">
         <google-map
           width="100%"
-          height="360px"
-          [center]="mapCenter()"
+          height="320px"
+          [center]="confirmedMapCenter()"
           [options]="mapOptions"
         >
-          @for (pos of markerPositions(); track pos.lat) {
-            <map-marker [position]="pos" />
-          }
+          <map-marker [position]="confirmedMarkerPosition()!" />
         </google-map>
       </div>
     }
 
-    <!-- Results placeholder -->
-    <div class="results-placeholder">
-      <div class="pulse-icon">📍</div>
-      <p>{{ strings.CALCULATING_SPOT }}</p>
-    </div>
-
-    <!-- Participants -->
     <div class="participants-section">
       <div class="section-header">
-        <h2>{{ strings.PARTICIPANTS }}</h2>
-        <span class="count-badge">{{ session()!.participants.length }}/6</span>
+        <h2>Participants</h2>
+        <span class="count-badge">{{ participants().length }}</span>
+      </div>
+      <div class="avatar-row">
+        @for (initials of participantInitials(); track $index) {
+          <div class="avatar" [title]="participants()[$index].name ?? 'Anonymous'">
+            {{ initials }}
+          </div>
+        }
+      </div>
+    </div>
+
+  <!-- Active session -->
+  } @else if (summary()) {
+    <!-- Header -->
+    <div class="live-header">
+      <div class="header-left">
+        <h1 class="page-title">JumpaSini Session</h1>
+        <span class="code-chip">{{ summary()!.session.short_code | shortCode }}</span>
+      </div>
+      @if (isPolling()) {
+        <span class="live-indicator">
+          <span class="live-dot"></span>Live
+        </span>
+      }
+    </div>
+
+    <!-- Expiry -->
+    <div class="expiry-notice">
+      ⏳ This session expires in {{ hoursUntilExpiry() }} hour{{ hoursUntilExpiry() === 1 ? '' : 's' }}
+    </div>
+
+    <!-- Participant avatars -->
+    @if (participants().length > 0) {
+      <div class="participants-section">
+        <div class="section-header">
+          <h2>Participants</h2>
+          <span class="count-badge">{{ participants().length }}/6</span>
+        </div>
+        <div class="avatar-row">
+          @for (initials of participantInitials(); track $index) {
+            <div class="avatar" [title]="participants()[$index].name ?? 'Anonymous'">
+              {{ initials }}
+            </div>
+          }
+        </div>
+      </div>
+    }
+
+    <!-- Waiting state -->
+    @if (!hasMidpoint() || !topVenue()) {
+      <div class="waiting-card">
+        <div class="pulse-icon">📍</div>
+        <p class="waiting-title">Waiting for everyone to join…</p>
+        <p class="waiting-sub">
+          {{ participants().length }} location{{ participants().length === 1 ? '' : 's' }} added
+        </p>
       </div>
 
-      @for (participant of session()!.participants; track participant.id) {
-        <app-participant-card [participant]="participant" [showRemove]="false" />
-      }
+    <!-- Recommendation + voting -->
+    } @else {
+      <div class="venue-card">
+        <div class="venue-card__label">Top Pick</div>
+        <h2 class="venue-card__name">{{ topVenue().name }}</h2>
+        @if (topVenue().address) {
+          <p class="venue-card__address">📍 {{ topVenue().address }}</p>
+        }
+        @if (topVenue().rating) {
+          <p class="venue-card__rating">⭐ {{ topVenue().rating }}</p>
+        }
+        <div class="venue-card__votes">
+          <app-vote-buttons
+            [placeId]="topVenue().place_id"
+            [venueName]="topVenue().name"
+            [upVotes]="getVoteData(topVenue().place_id).up"
+            [downVotes]="getVoteData(topVenue().place_id).down"
+            (voted)="castVote($event.placeId, topVenue().name, $event.vote)"
+          />
+        </div>
+        <button
+          class="confirm-btn"
+          (click)="confirmVenue(topVenue().place_id)"
+        >
+          ✓ Confirm this spot
+        </button>
+      </div>
 
-      @if (session()!.participants.length === 0) {
-        <p class="empty-participants">No participants yet.</p>
+      @if (hasVotes()) {
+        <div class="tally-card">
+          <app-vote-tally
+            [voteSummary]="voteSummary()"
+            [venueNames]="venueNames()"
+          />
+        </div>
       }
+    }
+
+    <!-- Join section -->
+    <div class="join-card">
+      <h2 class="join-title">Join this session</h2>
+      <p class="join-sub">Add your location so the fairest meetup spot can be found.</p>
+
+      <div class="join-form">
+        <input
+          class="join-input"
+          type="text"
+          placeholder="Your name (optional)"
+          [value]="joinName()"
+          (input)="joinName.set($any($event.target).value)"
+        />
+
+        <div class="join-input-wrap">
+          <input
+            class="join-input"
+            type="text"
+            placeholder="Your address or nearby landmark"
+            [value]="joinAddressQuery()"
+            (input)="onJoinAddressInput($any($event.target).value)"
+            autocomplete="off"
+          />
+          @if (isResolvingLocation()) {
+            <span class="resolving-spinner"></span>
+          }
+          @if (joinLocation()) {
+            <span class="location-ok">✓</span>
+          }
+          @if (showJoinSuggestions()) {
+            <ul class="address-dropdown">
+              @for (s of joinSuggestions(); track s.placeId) {
+                <li class="address-option" (click)="selectJoinSuggestion(s)">
+                  <span class="addr-primary">{{ s.primaryText }}</span>
+                  <span class="addr-secondary">{{ s.secondaryText }}</span>
+                </li>
+              }
+            </ul>
+          }
+        </div>
+
+        @if (joinError()) {
+          <p class="join-error">{{ joinError() }}</p>
+        }
+
+        <button
+          class="join-btn"
+          [disabled]="!canJoin()"
+          (click)="joinSession()"
+        >
+          @if (isJoining()) {
+            <span class="btn-spinner"></span>Joining…
+          } @else {
+            Join this session
+          }
+        </button>
+      </div>
     </div>
   }
 </div>

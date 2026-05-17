@@ -1,12 +1,7 @@
-import { ParticipantModel } from './participant.model';
-import { SessionModel } from './session.model';
-
 export interface VoteSummary {
-  placeId: string;
-  upVotes: number;
-  downVotes: number;
+  up: number;
+  down: number;
   total: number;
-  myVote?: string | null;
 }
 
 export interface VotePayload {
@@ -20,16 +15,6 @@ export interface ConfirmVenuePayload {
   googlePlaceId: string;
 }
 
-export interface SessionSummary {
-  session: SessionModel;
-  participants: ParticipantModel[];
-  midpoint: { lat: number; lng: number } | null;
-  confirmedVenue: ConfirmedVenue | null;
-  voteSummary: Record<string, VoteSummary>;
-  isComplete: boolean;
-  expiresAt: string;
-}
-
 export interface ConfirmedVenue {
   google_place_id: string;
   name: string;
@@ -39,4 +24,27 @@ export interface ConfirmedVenue {
   google_rating: number | null;
   is_halal: boolean;
   is_halal_verified: boolean;
+}
+
+// Raw API response shape — field names match server snake_case output
+export interface SessionSummary {
+  session: {
+    id: string;
+    short_code: string;
+    transport_mode: string;
+    venue_type: string;
+    halal_filter: boolean;
+    status: string;
+    expires_at: string;
+    shareable_url: string | null;
+    session_confirmed_venue: string | null;
+    session_confirmed_at: string | null;
+  };
+  participants: Array<{ id: string; name: string | null; address: string }>;
+  midpoint: { lat: number; lng: number } | null;
+  confirmed_venue: ConfirmedVenue | null;
+  vote_summary: Record<string, VoteSummary>;
+  recommendation: any | null;
+  is_complete: boolean;
+  expires_at: string;
 }

@@ -6,15 +6,15 @@
         <div class="tally-header">
           <span class="venue-name">{{ row.venueName }}</span>
           <span class="vote-counts">
-            <span class="up">👍 {{ row.upVotes }}</span>
-            <span class="down">👎 {{ row.downVotes }}</span>
+            <span class="up">👍 {{ row.up }}</span>
+            <span class="down">👎 {{ row.down }}</span>
           </span>
         </div>
         <div class="progress-track">
           <div
             class="progress-bar"
-            [class.progress-bar--positive]="row.upVotes >= row.downVotes"
-            [class.progress-bar--negative]="row.upVotes < row.downVotes"
+            [class.progress-bar--positive]="row.up >= row.down"
+            [class.progress-bar--negative]="row.up < row.down"
             [style.width.%]="row.ratio * 100"
           ></div>
         </div>
