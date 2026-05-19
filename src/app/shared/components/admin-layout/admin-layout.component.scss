@@ -1,0 +1,161 @@
+$sidebar-width: 220px;
+$sidebar-collapsed-width: 0px;
+$topbar-height: 56px;
+$primary: #e8462a;
+$sidebar-bg: #1a1a2e;
+$sidebar-text: #ccc;
+$sidebar-active: #e8462a;
+
+.admin-shell {
+  display: flex;
+  height: 100vh;
+  overflow: hidden;
+}
+
+// ─── Sidebar ───────────────────────────────────────────────────
+
+.sidebar {
+  width: $sidebar-width;
+  background: $sidebar-bg;
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  transition: width 0.25s ease;
+  overflow: hidden;
+}
+
+.admin-shell.sidebar-collapsed .sidebar {
+  width: $sidebar-collapsed-width;
+}
+
+.sidebar-brand {
+  padding: 1.25rem 1rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+
+  .brand-text {
+    font-size: 1.25rem;
+    font-weight: 800;
+    color: $primary;
+    white-space: nowrap;
+  }
+}
+
+.sidebar-nav {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 0.75rem 0;
+  overflow-y: auto;
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  color: $sidebar-text;
+  text-decoration: none;
+  font-size: 0.9rem;
+  white-space: nowrap;
+  border: none;
+  background: none;
+  cursor: pointer;
+  width: 100%;
+  text-align: left;
+  transition: background 0.15s, color 0.15s;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.06);
+    color: #fff;
+  }
+
+  &.active {
+    background: rgba($primary, 0.15);
+    color: $primary;
+    font-weight: 600;
+  }
+}
+
+.nav-icon {
+  font-size: 1.1rem;
+  width: 1.25rem;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.nav-label {
+  flex: 1;
+}
+
+.nav-logout {
+  margin-top: auto;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  color: #888;
+
+  &:hover {
+    color: #e05252;
+    background: rgba(224, 82, 82, 0.08);
+  }
+}
+
+// ─── Main area ─────────────────────────────────────────────────
+
+.main-area {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: #f7f7f7;
+}
+
+.topbar {
+  height: $topbar-height;
+  background: #fff;
+  border-bottom: 1px solid #e8e8e8;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0 1.5rem;
+  flex-shrink: 0;
+}
+
+.hamburger {
+  background: none;
+  border: none;
+  font-size: 1.25rem;
+  cursor: pointer;
+  color: #555;
+  padding: 0.25rem;
+
+  &:hover {
+    color: $primary;
+  }
+}
+
+.topbar-title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #333;
+}
+
+.content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 1.5rem;
+}
+
+// ─── Mobile ────────────────────────────────────────────────────
+
+@media (max-width: 768px) {
+  .sidebar {
+    position: fixed;
+    left: 0;
+    top: 0;
+    height: 100%;
+    z-index: 100;
+  }
+
+  .admin-shell.sidebar-collapsed .main-area {
+    margin-left: 0;
+  }
+}
