@@ -1,1 +1,110 @@
-<p>Venue List — coming in CP4</p>
+<div class="toolbar">
+  <div class="filters">
+    <input
+      class="search-input"
+      type="text"
+      placeholder="Search name or address…"
+      [value]="searchTerm"
+      (input)="onSearchInput($any($event.target).value)"
+    />
+
+    <select class="filter-select" [(ngModel)]="selectedType" (ngModelChange)="onFilterChange()">
+      <option value="">All Types</option>
+      @for (t of venueTypes; track t) {
+        <option [value]="t">{{ t }}</option>
+      }
+    </select>
+
+    <select class="filter-select" [(ngModel)]="selectedHalal" (ngModelChange)="onFilterChange()">
+      <option value="all">All Halal</option>
+      <option value="true">Halal</option>
+      <option value="false">Not Halal</option>
+      <option value="unverified">Unverified</option>
+    </select>
+  </div>
+
+  <a routerLink="/admin/venues/new" class="btn-add">+ Add Venue</a>
+</div>
+
+@if (loading()) {
+  <div class="loading">Loading venues…</div>
+} @else {
+  <div class="table-wrapper">
+    <table class="venue-table">
+      <thead>
+        <tr>
+          <th>Name / Address</th>
+          <th>Type</th>
+          <th>Halal Status</th>
+          <th>Rating</th>
+          <th>Active</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        @if (venues().length === 0) {
+          <tr>
+            <td colspan="6" class="empty-row">No venues found.</td>
+          </tr>
+        }
+        @for (venue of venues(); track venue.id) {
+          <tr [class.inactive-row]="!venue.is_active">
+            <td class="name-cell">
+              <div class="venue-name">{{ venue.name }}</div>
+              <div class="venue-address">{{ venue.address }}</div>
+            </td>
+            <td><span class="chip">{{ venue.type }}</span></td>
+            <td>
+              <span class="badge" [ngClass]="halalClass(venue)">{{ halalLabel(venue) }}</span>
+            </td>
+            <td class="rating-cell">{{ stars(venue.google_rating) }}</td>
+            <td>
+              <span class="status-dot" [class.active]="venue.is_active">
+                {{ venue.is_active ? 'Active' : 'Inactive' }}
+              </span>
+            </td>
+            <td class="actions-cell">
+              <button class="action-btn" (click)="editVenue(venue.id)">Edit</button>
+              <button class="action-btn" (click)="manageHalal(venue.id)">Halal</button>
+              <button
+                class="action-btn danger"
+                (click)="deleteVenue(venue)"
+                [disabled]="deletingId() === venue.id"
+              >
+                {{ deletingId() === venue.id ? '…' : 'Delete' }}
+              </button>
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+
+  @if (pagination(); as meta) {
+    @if (meta.last_page > 1) {
+      <div class="pagination">
+        <button
+          class="page-btn"
+          [disabled]="currentPage === 1"
+          (click)="goToPage(currentPage - 1)"
+        >‹</button>
+
+        @for (p of pages; track p) {
+          <button
+            class="page-btn"
+            [class.active]="p === currentPage"
+            (click)="goToPage(p)"
+          >{{ p }}</button>
+        }
+
+        <button
+          class="page-btn"
+          [disabled]="currentPage === meta.last_page"
+          (click)="goToPage(currentPage + 1)"
+        >›</button>
+
+        <span class="page-info">{{ meta.total }} venues</span>
+      </div>
+    }
+  }
+}

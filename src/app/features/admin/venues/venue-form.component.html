@@ -1,1 +1,151 @@
-<p>Venue Form — coming in CP4</p>
+<div class="form-page">
+  <div class="form-header">
+    <a routerLink="/admin/venues" class="back-link">← Venues</a>
+    <h1 class="form-title">{{ isEdit() ? 'Edit Venue' : 'Add New Venue' }}</h1>
+  </div>
+
+  @if (loadingVenue()) {
+    <div class="loading">Loading venue…</div>
+  } @else {
+    <form [formGroup]="form" (ngSubmit)="submit()" class="form-grid" novalidate>
+      @if (error()) {
+        <div class="error-banner form-full">{{ error() }}</div>
+      }
+
+      <!-- Name -->
+      <div class="field">
+        <label>Name <span class="req">*</span></label>
+        <input formControlName="name" type="text" placeholder="e.g. KLCC Mall" />
+        @if (form.get('name')?.invalid && form.get('name')?.touched) {
+          <span class="field-error">Name is required</span>
+        }
+      </div>
+
+      <!-- Address -->
+      <div class="field form-full">
+        <label>Address <span class="req">*</span></label>
+        <input formControlName="address" type="text" placeholder="Full address" />
+        @if (form.get('address')?.invalid && form.get('address')?.touched) {
+          <span class="field-error">Address is required</span>
+        }
+      </div>
+
+      <!-- Lat / Lng -->
+      <div class="field">
+        <label>Latitude <span class="req">*</span></label>
+        <input formControlName="latitude" type="number" step="0.0001" placeholder="3.1390" />
+        @if (form.get('latitude')?.invalid && form.get('latitude')?.touched) {
+          <span class="field-error">Must be between 2.5 and 6.5</span>
+        }
+      </div>
+
+      <div class="field">
+        <label>Longitude <span class="req">*</span></label>
+        <input formControlName="longitude" type="number" step="0.0001" placeholder="101.6869" />
+        @if (form.get('longitude')?.invalid && form.get('longitude')?.touched) {
+          <span class="field-error">Must be between 99.5 and 104.5</span>
+        }
+      </div>
+
+      <!-- Map preview -->
+      <div class="map-preview form-full">
+        <google-map
+          [center]="mapCenter()"
+          [options]="mapOptions"
+          width="100%"
+          height="220px"
+        >
+          <map-marker [position]="markerPosition" [options]="markerOptions" />
+        </google-map>
+      </div>
+
+      <!-- Type -->
+      <div class="field">
+        <label>Type <span class="req">*</span></label>
+        <select formControlName="type">
+          @for (t of venueTypes; track t) {
+            <option [value]="t">{{ t }}</option>
+          }
+        </select>
+      </div>
+
+      <!-- Halal 3-way toggle -->
+      <div class="field">
+        <label>Halal Status</label>
+        <div class="toggle-group">
+          <button
+            type="button"
+            class="toggle-btn"
+            [class.selected-yes]="isHalalValue === true"
+            (click)="setIsHalal(true)"
+          >Yes</button>
+          <button
+            type="button"
+            class="toggle-btn"
+            [class.selected-no]="isHalalValue === false"
+            (click)="setIsHalal(false)"
+          >No</button>
+          <button
+            type="button"
+            class="toggle-btn"
+            [class.selected-unknown]="isHalalValue === null"
+            (click)="setIsHalal(null)"
+          >Unknown</button>
+        </div>
+      </div>
+
+      <!-- JAKIM verified -->
+      <div class="field">
+        <label class="checkbox-label">
+          <input
+            formControlName="is_halal_verified"
+            type="checkbox"
+          />
+          JAKIM Verified
+        </label>
+        @if (isHalalValue !== true) {
+          <span class="field-hint">Enable "Yes" halal to verify</span>
+        }
+      </div>
+
+      <!-- Google Place ID -->
+      <div class="field">
+        <label>Google Place ID</label>
+        <input formControlName="google_place_id" type="text" placeholder="ChIJ…" />
+      </div>
+
+      <!-- Google Rating -->
+      <div class="field">
+        <label>Google Rating ({{ form.get('google_rating')?.value ?? '—' }})</label>
+        <input
+          formControlName="google_rating"
+          type="range"
+          min="0"
+          max="5"
+          step="0.1"
+          class="rating-slider"
+        />
+      </div>
+
+      <!-- Phone -->
+      <div class="field">
+        <label>Phone</label>
+        <input formControlName="phone" type="tel" placeholder="+60 3-xxxx xxxx" />
+      </div>
+
+      <!-- Website -->
+      <div class="field">
+        <label>Website</label>
+        <input formControlName="website" type="url" placeholder="https://…" />
+      </div>
+
+      <!-- Submit -->
+      <div class="form-actions form-full">
+        <button type="submit" class="btn-save" [disabled]="loading()">
+          {{ loading() ? 'Saving…' : (isEdit() ? 'Update Venue' : 'Create Venue') }}
+        </button>
+        <a routerLink="/admin/venues" class="btn-cancel">Cancel</a>
+      </div>
+    </form>
+  }
+</div>

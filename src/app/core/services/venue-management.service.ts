@@ -5,8 +5,8 @@ import { map } from 'rxjs/operators';
 import {
   CreateVenuePayload,
   HalalOverridePayload,
+  HalalReportSummary,
   UpdateVenuePayload,
-  VenueHalalReport,
   VenueListParams,
   VenueModel,
 } from '../models/venue.model';
@@ -29,11 +29,6 @@ interface VenueListApiData {
   };
 }
 
-interface HalalReportsApiData {
-  venue_id: string;
-  reports: VenueHalalReport[];
-  summary: { total: number; halal: number; not_halal: number };
-}
 
 @Injectable({ providedIn: 'root' })
 export class VenueManagementService {
@@ -90,9 +85,9 @@ export class VenueManagementService {
       .pipe(map((res) => res.data));
   }
 
-  getHalalReports(id: string): Observable<HalalReportsApiData> {
+  getHalalReports(id: string): Observable<HalalReportSummary> {
     return this.http
-      .get<ApiResponse<HalalReportsApiData>>(`${this.baseUrl}/${id}/halal-reports`)
+      .get<ApiResponse<HalalReportSummary>>(`${this.baseUrl}/${id}/halal-reports`)
       .pipe(map((res) => res.data));
   }
 

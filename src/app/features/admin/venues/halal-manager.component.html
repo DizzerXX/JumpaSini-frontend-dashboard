@@ -1,1 +1,135 @@
-<p>Halal Manager — coming in CP4</p>
+<div class="halal-page">
+  <h1 class="page-title">Halal Manager</h1>
+
+  <!-- Tabs -->
+  <div class="tabs">
+    <button
+      class="tab-btn"
+      [class.active]="activeTab() === 'pending'"
+      (click)="switchTab('pending')"
+    >Pending Review</button>
+    <button
+      class="tab-btn"
+      [class.active]="activeTab() === 'all'"
+      (click)="switchTab('all')"
+    >All Reports</button>
+  </div>
+
+  <!-- ── Tab 1: Pending Review ─────────────────────────────── -->
+  @if (activeTab() === 'pending') {
+    @if (loading()) {
+      <div class="loading">Loading pending reviews…</div>
+    } @else if (pendingVenues().length === 0) {
+      <div class="empty">
+        <p>No venues with crowd-sourced halal reports pending review.</p>
+      </div>
+    } @else {
+      <div class="pending-list">
+        @for (item of pendingVenues(); track item.venue.id) {
+          <div class="pending-card">
+            <div class="pending-info">
+              <div class="venue-name">{{ item.venue.name }}</div>
+              <div class="venue-meta">
+                <span class="chip">{{ item.venue.type }}</span>
+                <span class="venue-address">{{ item.venue.address }}</span>
+              </div>
+              <div class="report-bar">
+                <span class="report-halal">{{ item.halal }} halal</span>
+                <div class="bar-track">
+                  <div
+                    class="bar-halal"
+                    [style.width.%]="item.total > 0 ? (item.halal / item.total) * 100 : 0"
+                  ></div>
+                  <div
+                    class="bar-not-halal"
+                    [style.width.%]="item.total > 0 ? (item.not_halal / item.total) * 100 : 0"
+                  ></div>
+                </div>
+                <span class="report-not-halal">{{ item.not_halal }} not halal</span>
+              </div>
+              <div class="report-count">{{ item.total }} report{{ item.total !== 1 ? 's' : '' }} total</div>
+            </div>
+
+            <div class="pending-actions">
+              <button
+                class="action-btn halal"
+                (click)="markHalal(item, true, false)"
+                [disabled]="item.actioning"
+              >✅ Mark Halal</button>
+              <button
+                class="action-btn not-halal"
+                (click)="markHalal(item, false, false)"
+                [disabled]="item.actioning"
+              >❌ Mark Not Halal</button>
+              <button
+                class="action-btn jakim"
+                (click)="markHalal(item, true, true)"
+                [disabled]="item.actioning"
+              >🏅 Mark JAKIM Verified</button>
+            </div>
+          </div>
+        }
+      </div>
+    }
+  }
+
+  <!-- ── Tab 2: All Reports ─────────────────────────────────── -->
+  @if (activeTab() === 'all') {
+    @if (allLoading()) {
+      <div class="loading">Loading reports…</div>
+    } @else if (allReports().length === 0) {
+      <div class="empty"><p>No halal reports yet.</p></div>
+    } @else {
+      <div class="table-wrapper">
+        <table class="reports-table">
+          <thead>
+            <tr>
+              <th>Venue</th>
+              <th>Reported As</th>
+              <th>Participant</th>
+              <th>Session ID</th>
+              <th>Date</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (row of allReports(); track row.id) {
+              <tr>
+                <td>{{ row.venue_id ?? '(place ID only)' }}</td>
+                <td>
+                  <span [class]="row.reported_as_halal ? 'badge-halal' : 'badge-not-halal'">
+                    {{ row.reported_as_halal ? '✅ Halal' : '❌ Not Halal' }}
+                  </span>
+                </td>
+                <td>{{ row.participant_name ?? '—' }}</td>
+                <td class="mono">{{ row.session_id }}</td>
+                <td>{{ row.created_at | date:'dd MMM yyyy' }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+
+      @if (allLastPage() > 1) {
+        <div class="pagination">
+          <button
+            class="page-btn"
+            [disabled]="allPage() === 1"
+            (click)="goToAllPage(allPage() - 1)"
+          >‹</button>
+          @for (p of allPages; track p) {
+            <button
+              class="page-btn"
+              [class.active]="p === allPage()"
+              (click)="goToAllPage(p)"
+            >{{ p }}</button>
+          }
+          <button
+            class="page-btn"
+            [disabled]="allPage() === allLastPage()"
+            (click)="goToAllPage(allPage() + 1)"
+          >›</button>
+        </div>
+      }
+    }
+  }
+</div>
