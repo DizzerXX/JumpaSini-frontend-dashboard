@@ -1,0 +1,225 @@
+$primary: #e8462a;
+$yellow: #ffcc00;
+
+.loading,
+.empty {
+  padding: 2rem;
+  text-align: center;
+  color: #aaa;
+  font-size: 0.9rem;
+}
+
+.error-state {
+  padding: 2rem;
+  text-align: center;
+  color: $primary;
+}
+
+// ─── Sections ──────────────────────────────────────────────────
+
+.section {
+  margin-bottom: 2rem;
+}
+
+.section-title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #333;
+  margin: 0 0 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+}
+
+.pending-badge {
+  background: $primary;
+  color: #fff;
+  font-size: 0.72rem;
+  font-weight: 700;
+  border-radius: 99px;
+  padding: 0.15rem 0.5rem;
+}
+
+// ─── Stat grid ─────────────────────────────────────────────────
+
+.stat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+}
+
+.stat-card {
+  background: #fff;
+  border-radius: 10px;
+  padding: 1.25rem 1.5rem;
+  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.06);
+  border-left: 4px solid transparent;
+
+  &.accent-border-red { border-left-color: $primary; }
+}
+
+.stat-label {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #999;
+  margin-bottom: 0.5rem;
+}
+
+.stat-value {
+  font-size: 2.25rem;
+  font-weight: 800;
+  color: #222;
+  line-height: 1;
+
+  &.accent-yellow { color: darken($yellow, 20%); }
+  &.accent-red    { color: $primary; }
+}
+
+.stat-row-sub {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.375rem;
+
+  span {
+    font-size: 0.72rem;
+    color: #bbb;
+  }
+}
+
+.areas-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+  margin-top: 0.5rem;
+}
+
+.area-chip {
+  background: #f0f0f0;
+  border-radius: 4px;
+  padding: 0.15rem 0.5rem;
+  font-size: 0.72rem;
+  color: #666;
+}
+
+// ─── Bar chart ─────────────────────────────────────────────────
+
+.chart-card {
+  background: #fff;
+  border-radius: 10px;
+  padding: 1.5rem;
+  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.06);
+}
+
+.bar-chart {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.bar-row {
+  display: grid;
+  grid-template-columns: 120px 1fr 40px;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.bar-label {
+  font-size: 0.85rem;
+  color: #555;
+  text-transform: capitalize;
+  text-align: right;
+}
+
+.bar-track {
+  background: #f0f0f0;
+  border-radius: 4px;
+  height: 22px;
+  overflow: hidden;
+}
+
+.bar-fill {
+  height: 100%;
+  background: $primary;
+  border-radius: 4px;
+  transition: width 0.4s ease;
+  min-width: 4px;
+}
+
+.bar-count {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #555;
+  text-align: right;
+}
+
+// ─── Tables ────────────────────────────────────────────────────
+
+.table-wrapper {
+  background: #fff;
+  border-radius: 10px;
+  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.06);
+  overflow-x: auto;
+}
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+
+  th {
+    background: #f7f7f7;
+    padding: 0.75rem 1rem;
+    text-align: left;
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #888;
+    border-bottom: 1px solid #eee;
+    white-space: nowrap;
+  }
+
+  td {
+    padding: 0.7rem 1rem;
+    border-bottom: 1px solid #f2f2f2;
+    vertical-align: middle;
+    color: #444;
+  }
+
+  tr:last-child td { border-bottom: none; }
+}
+
+.chip {
+  background: #f0f0f0;
+  border-radius: 4px;
+  padding: 0.15rem 0.5rem;
+  font-size: 0.78rem;
+  text-transform: capitalize;
+  color: #555;
+}
+
+.status-badge {
+  font-size: 0.75rem;
+  font-weight: 600;
+  border-radius: 4px;
+  padding: 0.15rem 0.5rem;
+
+  &.status-active    { background: #e8f5e9; color: #2e7d32; }
+  &.status-completed { background: #e3f2fd; color: #1565c0; }
+  &.status-pending   { background: #f5f5f5; color: #888; }
+}
+
+.halal-yes { font-size: 0.82rem; font-weight: 600; color: #2e7d32; }
+.halal-no  { font-size: 0.82rem; font-weight: 600; color: $primary; }
+
+.mono {
+  font-family: monospace;
+  font-size: 0.78rem;
+  color: #999;
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  display: block;
+}
