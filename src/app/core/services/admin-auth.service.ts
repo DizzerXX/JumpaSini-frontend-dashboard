@@ -17,6 +17,7 @@ export class AdminAuthService {
   private readonly baseUrl = `${environment.apiBaseUrl}/admin`;
 
   readonly token$ = new BehaviorSubject<string | null>(null);
+  readonly admin$ = new BehaviorSubject<AdminModel | null>(null);
 
   isAuthenticated(): boolean {
     return this.token$.value !== null;
@@ -28,14 +29,20 @@ export class AdminAuthService {
 
   login(payload: LoginPayload): Observable<AuthResponse> {
     return this.http.post<ApiResponse<AuthResponse>>(`${this.baseUrl}/login`, payload).pipe(
-      tap((res) => this.token$.next(res.data.token)),
+      tap((res) => {
+        this.token$.next(res.data.token);
+        this.admin$.next(res.data.admin);
+      }),
       map((res) => res.data),
     );
   }
 
   logout(): Observable<void> {
     return this.http.post<ApiResponse<null>>(`${this.baseUrl}/logout`, {}).pipe(
-      tap(() => this.token$.next(null)),
+      tap(() => {
+        this.token$.next(null);
+        this.admin$.next(null);
+      }),
       map(() => void 0),
     );
   }
@@ -43,6 +50,9 @@ export class AdminAuthService {
   getMe(): Observable<AdminModel> {
     return this.http
       .get<ApiResponse<AdminModel>>(`${this.baseUrl}/me`)
-      .pipe(map((res) => res.data));
+      .pipe(
+        tap((res) => this.admin$.next(res.data)),
+        map((res) => res.data),
+      );
   }
 }

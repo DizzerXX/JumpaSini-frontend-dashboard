@@ -6,11 +6,7 @@
 
     <nav class="sidebar-nav">
       @for (item of navItems; track item.path) {
-        <a
-          [routerLink]="item.path"
-          routerLinkActive="active"
-          class="nav-item"
-        >
+        <a [routerLink]="item.path" routerLinkActive="active" class="nav-item">
           <span class="nav-icon">{{ item.icon }}</span>
           <span class="nav-label">{{ item.label }}</span>
         </a>
@@ -25,10 +21,12 @@
 
   <div class="main-area">
     <header class="topbar">
-      <button class="hamburger" (click)="toggleSidebar()" aria-label="Toggle sidebar">
-        ☰
-      </button>
+      <button class="hamburger" (click)="toggleSidebar()" aria-label="Toggle sidebar">☰</button>
       <span class="topbar-title">JumpaSini Admin</span>
+      <span class="topbar-spacer"></span>
+      @if (admin()) {
+        <span class="admin-name">{{ admin()!.name }}</span>
+      }
     </header>
 
     <main class="content">

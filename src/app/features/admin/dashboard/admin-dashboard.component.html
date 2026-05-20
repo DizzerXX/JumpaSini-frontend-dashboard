@@ -1,1 +1,67 @@
-<p>Dashboard — coming in CP3</p>
+@if (loading()) {
+  <div class="loading-state">Loading analytics…</div>
+} @else if (error()) {
+  <div class="error-state">{{ error() }}</div>
+} @else {
+  @if (overview(); as ov) {
+    <!-- Row 1: Key metric cards -->
+    <div class="stat-row">
+      <div class="stat-card">
+        <div class="stat-label">Total Sessions</div>
+        <div class="stat-value">{{ ov.totalSessions }}</div>
+        <div class="stat-sub">{{ ov.sessionsToday }} today · {{ ov.sessionsThisWeek }} this week</div>
+      </div>
+
+      <div class="stat-card accent-yellow">
+        <div class="stat-label">Active Sessions</div>
+        <div class="stat-value">{{ ov.activeSessions }}</div>
+        <div class="stat-sub">{{ ov.completedSessions }} completed</div>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-label">Total Participants</div>
+        <div class="stat-value">{{ ov.totalParticipants }}</div>
+        <div class="stat-sub">avg {{ ov.avgParticipantsPerSession }} per session</div>
+      </div>
+
+      <div class="stat-card accent-red">
+        <div class="stat-label">Halal Reports</div>
+        <div class="stat-value">{{ ov.totalHalalReports }}</div>
+        <div class="stat-sub">{{ ov.totalVenueSearches }} venue searches</div>
+      </div>
+    </div>
+
+    <!-- Row 2: Popular venue types — CSS bar chart -->
+    <div class="chart-section">
+      <h2 class="section-title">Popular Venue Types</h2>
+      @if (ov.popularVenueTypes.length > 0) {
+        <div class="bar-chart">
+          @for (item of ov.popularVenueTypes; track item.type) {
+            <div class="bar-row">
+              <span class="bar-label">{{ item.type }}</span>
+              <div class="bar-track">
+                <div
+                  class="bar-fill"
+                  [style.width]="barWidth(item.count, maxCount(ov.popularVenueTypes))"
+                ></div>
+              </div>
+              <span class="bar-count">{{ item.count }}</span>
+            </div>
+          }
+        </div>
+      } @else {
+        <p class="empty-chart">No session data yet.</p>
+      }
+    </div>
+
+    <!-- Row 3: Quick actions -->
+    <div class="actions-section">
+      <h2 class="section-title">Quick Actions</h2>
+      <div class="action-row">
+        <a routerLink="/admin/venues/new" class="action-btn primary">+ Add New Venue</a>
+        <a routerLink="/admin/halal" class="action-btn secondary">Review Halal Reports</a>
+        <a routerLink="/admin/analytics" class="action-btn secondary">View All Sessions</a>
+      </div>
+    </div>
+  }
+}

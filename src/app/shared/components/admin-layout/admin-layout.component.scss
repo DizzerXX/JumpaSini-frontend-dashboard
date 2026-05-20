@@ -138,6 +138,16 @@ $sidebar-active: #e8462a;
   color: #333;
 }
 
+.topbar-spacer {
+  flex: 1;
+}
+
+.admin-name {
+  font-size: 0.875rem;
+  color: #555;
+  font-weight: 500;
+}
+
 .content {
   flex: 1;
   overflow-y: auto;
