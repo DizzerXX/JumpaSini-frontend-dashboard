@@ -12,22 +12,18 @@ interface ApiResponse<T> {
   message: string;
 }
 
-interface AddParticipantResponse {
-  session: SessionModel;
-}
-
 @Injectable({ providedIn: 'root' })
 export class SessionService {
   private readonly http = inject(HttpClient);
 
   createSession(payload: CreateSessionPayload): Observable<SessionModel> {
     return this.http
-      .post<ApiResponse<SessionModel>>(API_ENDPOINTS.SESSIONS, {
+      .post<ApiResponse<any>>(API_ENDPOINTS.SESSIONS, {
         transport_mode: payload.transportMode,
         venue_type: payload.venueType,
         halal_filter: payload.halalFilter,
       })
-      .pipe(map((res) => res.data));
+      .pipe(map((res) => this.mapSession(res.data)));
   }
 
   addParticipant(
@@ -42,17 +38,14 @@ export class SessionService {
     if (payload.name?.trim()) body['name'] = payload.name.trim();
 
     return this.http
-      .post<ApiResponse<AddParticipantResponse>>(
-        API_ENDPOINTS.ADD_PARTICIPANT(shortCode),
-        body,
-      )
-      .pipe(map((res) => res.data.session));
+      .post<ApiResponse<any>>(API_ENDPOINTS.ADD_PARTICIPANT(shortCode), body)
+      .pipe(map((res) => this.mapSession(res.data.session ?? res.data)));
   }
 
   getSession(shortCode: string): Observable<SessionModel> {
     return this.http
-      .get<ApiResponse<SessionModel>>(API_ENDPOINTS.SESSION_BY_CODE(shortCode))
-      .pipe(map((res) => res.data));
+      .get<ApiResponse<any>>(API_ENDPOINTS.SESSION_BY_CODE(shortCode))
+      .pipe(map((res) => this.mapSession(res.data)));
   }
 
   removeParticipant(
@@ -60,9 +53,26 @@ export class SessionService {
     participantId: string,
   ): Observable<SessionModel> {
     return this.http
-      .delete<ApiResponse<SessionModel>>(
+      .delete<ApiResponse<any>>(
         API_ENDPOINTS.REMOVE_PARTICIPANT(shortCode, participantId),
       )
-      .pipe(map((res) => res.data));
+      .pipe(map((res) => this.mapSession(res.data)));
+  }
+
+  private mapSession(data: any): SessionModel {
+    return {
+      id: data.id,
+      shortCode: data.short_code,
+      transportMode: data.transport_mode,
+      venueType: data.venue_type,
+      halalFilter: data.halal_filter,
+      status: data.status,
+      expiresAt: data.expires_at,
+      participants: data.participants ?? [],
+      createdAt: data.created_at ?? null,
+      shareableUrl: data.shareable_url ?? null,
+      sessionConfirmedVenue: data.session_confirmed_venue ?? null,
+      sessionConfirmedAt: data.session_confirmed_at ?? null,
+    };
   }
 }
