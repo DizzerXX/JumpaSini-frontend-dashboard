@@ -213,11 +213,12 @@ export class CreateSessionComponent implements OnInit {
         halalFilter: this.halalFilter(),
       };
 
-      let session = await firstValueFrom(this.sessionService.createSession(payload));
+      const session = await firstValueFrom(this.sessionService.createSession(payload));
+      const shortCode = session.shortCode;
 
       for (const p of this.localParticipants()) {
-        session = await firstValueFrom(
-          this.sessionService.addParticipant(session.shortCode, {
+        await firstValueFrom(
+          this.sessionService.addParticipant(shortCode, {
             name: p.name || undefined,
             address: p.address,
             latitude: p.latitude,
@@ -226,8 +227,8 @@ export class CreateSessionComponent implements OnInit {
         );
       }
 
-      const url = `${window.location.origin}/session/${session.shortCode}`;
-      this.createdShortCode.set(session.shortCode);
+      const url = `${window.location.origin}/session/${shortCode}`;
+      this.createdShortCode.set(shortCode);
       this.shareableUrl.set(url);
 
       const dataUrl = await QRCode.toDataURL(url, { width: 200, margin: 2 });
