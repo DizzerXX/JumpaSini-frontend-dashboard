@@ -13,6 +13,7 @@ import { ActivatedRoute } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { GoogleMap, MapMarker } from '@angular/google-maps';
 import {
+  BehaviorSubject,
   EMPTY,
   Subject,
   catchError,
@@ -32,6 +33,8 @@ import { VoteButtonsComponent } from '../../../shared/components/vote-buttons/vo
 import { VoteTallyComponent } from '../../../shared/components/vote-tally/vote-tally.component';
 import { ConfirmedVenueComponent } from '../../../shared/components/confirmed-venue/confirmed-venue.component';
 import { ShortCodePipe } from '../../../shared/pipes/short-code.pipe';
+import { VotingTimerComponent } from '../../../shared/components/voting-timer/voting-timer.component';
+import { VotingWinnerComponent } from '../../../shared/components/voting-winner/voting-winner.component';
 
 @Component({
   selector: 'app-session-view',
@@ -45,6 +48,8 @@ import { ShortCodePipe } from '../../../shared/pipes/short-code.pipe';
     VoteTallyComponent,
     ConfirmedVenueComponent,
     ShortCodePipe,
+    VotingTimerComponent,
+    VotingWinnerComponent,
   ],
   templateUrl: './session-view.component.html',
   styleUrl: './session-view.component.scss',
@@ -69,6 +74,9 @@ export class SessionViewComponent implements OnInit {
   private updateTimer: ReturnType<typeof setTimeout> | null = null;
   private joinSuccessTimer: ReturnType<typeof setTimeout> | null = null;
   private copiedTimer: ReturnType<typeof setTimeout> | null = null;
+  private expiryTimer: ReturnType<typeof setTimeout> | null = null;
+
+  private readonly pollInterval$ = new BehaviorSubject<number>(10_000);
 
   readonly isComplete = computed(() => this.summary()?.is_complete ?? false);
   readonly isPolling = computed(() => {
@@ -81,6 +89,22 @@ export class SessionViewComponent implements OnInit {
   readonly confirmedVenue = computed(() => this.summary()?.confirmed_venue ?? null);
   readonly hasMidpoint = computed(() => this.summary()?.midpoint !== null);
   readonly isSingleParticipant = computed(() => this.participants().length === 1);
+
+  readonly votingState = computed(() => this.summary()?.voting_state ?? null);
+  readonly isVotingActive = computed(() => this.votingState()?.active ?? false);
+  readonly votingEndsAt = computed(() => this.votingState()?.ends_at ?? null);
+  readonly votingConfirmedVenue = computed(() => this.votingState()?.voting_confirmed_venue ?? null);
+  readonly isStartingVoting = signal(false);
+  readonly isVotingExpired = signal(false);
+
+  readonly showStartVoting = computed(
+    () =>
+      this.hasMidpoint() &&
+      !!this.topVenue() &&
+      !this.isVotingActive() &&
+      !this.votingConfirmedVenue() &&
+      !this.isComplete(),
+  );
 
   readonly hoursUntilExpiry = computed(() => {
     const expiry = this.summary()?.expires_at;
@@ -150,6 +174,7 @@ export class SessionViewComponent implements OnInit {
       if (this.updateTimer) clearTimeout(this.updateTimer);
       if (this.joinSuccessTimer) clearTimeout(this.joinSuccessTimer);
       if (this.copiedTimer) clearTimeout(this.copiedTimer);
+      if (this.expiryTimer) clearTimeout(this.expiryTimer);
     });
     this.loadSummary();
     this.setupPolling();
@@ -170,14 +195,18 @@ export class SessionViewComponent implements OnInit {
   }
 
   private setupPolling(): void {
-    interval(10_000)
+    this.pollInterval$
       .pipe(
-        switchMap(() => {
-          if (this.isComplete()) return EMPTY;
-          return this.collaborationService
-            .getSessionSummary(this.shortCode)
-            .pipe(catchError(() => EMPTY));
-        }),
+        switchMap((ms) =>
+          interval(ms).pipe(
+            switchMap(() => {
+              if (this.isComplete()) return EMPTY;
+              return this.collaborationService
+                .getSessionSummary(this.shortCode)
+                .pipe(catchError(() => EMPTY));
+            }),
+          ),
+        ),
         takeUntilDestroyed(this.destroyRef),
       )
       .subscribe((summary) => {
@@ -187,6 +216,10 @@ export class SessionViewComponent implements OnInit {
           this.isUpdating.set(true);
           if (this.updateTimer) clearTimeout(this.updateTimer);
           this.updateTimer = setTimeout(() => this.isUpdating.set(false), 2000);
+        }
+        const desiredMs = (summary.voting_state?.active ?? false) ? 5_000 : 10_000;
+        if (desiredMs !== this.pollInterval$.value) {
+          this.pollInterval$.next(desiredMs);
         }
       });
   }
@@ -289,6 +322,32 @@ export class SessionViewComponent implements OnInit {
         next: () => this.loadSummary(),
         error: () => {},
       });
+  }
+
+  startVoting(): void {
+    this.isStartingVoting.set(true);
+    this.collaborationService.startVoting(this.shortCode).subscribe({
+      next: (summary) => {
+        this.summary.set(summary);
+        this.isStartingVoting.set(false);
+        if (summary.voting_state?.active) {
+          this.pollInterval$.next(5_000);
+        }
+      },
+      error: () => {
+        this.isStartingVoting.set(false);
+      },
+    });
+  }
+
+  onVotingExpired(): void {
+    this.isVotingExpired.set(true);
+    this.loadSummary();
+    if (this.expiryTimer) clearTimeout(this.expiryTimer);
+    this.expiryTimer = setTimeout(() => {
+      this.isVotingExpired.set(false);
+      this.loadSummary();
+    }, 3000);
   }
 
   getVoteData(placeId: string): VoteSummary {

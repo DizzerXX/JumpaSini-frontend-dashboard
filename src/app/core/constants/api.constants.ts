@@ -13,4 +13,5 @@ export const API_ENDPOINTS = {
   SESSION_SUMMARY: (shortCode: string) => `${API_BASE_URL}/sessions/${shortCode}/summary`,
   RECOMMENDATION: (shortCode: string) => `${API_BASE_URL}/sessions/${shortCode}/recommendation`,
   VENUES: (shortCode: string) => `${API_BASE_URL}/sessions/${shortCode}/venues`,
+  VOTING_START: (shortCode: string) => `${API_BASE_URL}/sessions/${shortCode}/voting/start`,
 } as const;

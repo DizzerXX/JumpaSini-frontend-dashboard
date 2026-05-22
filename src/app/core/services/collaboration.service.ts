@@ -69,4 +69,10 @@ export class CollaborationService {
       .get<ApiResponse<SessionSummary>>(API_ENDPOINTS.SESSION_SUMMARY(shortCode))
       .pipe(map((res) => res.data));
   }
+
+  startVoting(shortCode: string): Observable<SessionSummary> {
+    return this.http
+      .post<ApiResponse<SessionSummary>>(API_ENDPOINTS.VOTING_START(shortCode), {})
+      .pipe(map((res) => res.data));
+  }
 }

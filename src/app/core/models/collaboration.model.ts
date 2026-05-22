@@ -4,6 +4,14 @@ export interface VoteSummary {
   total: number;
 }
 
+export interface VotingState {
+  active: boolean;
+  ends_at: string | null;
+  seconds_remaining: number;
+  winning_venue: string | null;
+  voting_confirmed_venue: string | null;
+}
+
 export interface VotePayload {
   googlePlaceId: string;
   venueName: string;
@@ -47,4 +55,5 @@ export interface SessionSummary {
   recommendation: any | null;
   is_complete: boolean;
   expires_at: string;
+  voting_state?: VotingState;
 }

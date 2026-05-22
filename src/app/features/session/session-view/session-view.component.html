@@ -131,6 +131,18 @@
 
       <!-- Recommendation + voting -->
       } @else {
+        @if (isVotingExpired()) {
+          <div class="confirming-banner">
+            <span class="confirming-spinner"></span>
+            Confirming winner…
+          </div>
+        }
+
+        @if (isVotingActive() && votingEndsAt()) {
+          <app-voting-timer [endsAt]="votingEndsAt()!" (expired)="onVotingExpired()" />
+          <app-voting-winner [voteSummary]="voteSummary()" [venueNames]="venueNames()" />
+        }
+
         <div class="venue-card">
           <div class="venue-card__label">Top Pick</div>
           <h2 class="venue-card__name">{{ topVenue().name }}</h2>
@@ -149,12 +161,27 @@
               (voted)="castVote($event.placeId, topVenue().name, $event.vote)"
             />
           </div>
-          <button
-            class="confirm-btn"
-            (click)="confirmVenue(topVenue().place_id)"
-          >
-            ✓ Confirm this spot
-          </button>
+          @if (!isVotingActive()) {
+            <button
+              class="confirm-btn"
+              (click)="confirmVenue(topVenue().place_id)"
+            >
+              ✓ Confirm this spot
+            </button>
+          }
+          @if (showStartVoting()) {
+            <button
+              class="start-voting-btn"
+              [disabled]="isStartingVoting()"
+              (click)="startVoting()"
+            >
+              @if (isStartingVoting()) {
+                <span class="btn-spinner"></span> Starting…
+              } @else {
+                🗳️ Start Group Voting
+              }
+            </button>
+          }
         </div>
 
         @if (hasVotes()) {
