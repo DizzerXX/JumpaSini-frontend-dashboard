@@ -70,6 +70,14 @@
       ⏳ This session expires in {{ hoursUntilExpiry() }} hour{{ hoursUntilExpiry() === 1 ? '' : 's' }}
     </div>
 
+    <!-- Updating banner -->
+    @if (isUpdating()) {
+      <div class="updating-banner">
+        <span class="updating-spinner"></span>
+        Updating results…
+      </div>
+    }
+
     <!-- Participant avatars -->
     @if (participants().length > 0) {
       <div class="participants-section">
@@ -87,111 +95,143 @@
       </div>
     }
 
-    <!-- Waiting state -->
-    @if (!hasMidpoint() || !topVenue()) {
-      <div class="waiting-card">
-        <div class="pulse-icon">📍</div>
-        <p class="waiting-title">Waiting for everyone to join…</p>
-        <p class="waiting-sub">
-          {{ participants().length }} location{{ participants().length === 1 ? '' : 's' }} added
-        </p>
-      </div>
+    <!-- Main content: single participant / calculating / recommendation -->
+    @if (participants().length > 0) {
 
-    <!-- Recommendation + voting -->
-    } @else {
-      <div class="venue-card">
-        <div class="venue-card__label">Top Pick</div>
-        <h2 class="venue-card__name">{{ topVenue().name }}</h2>
-        @if (topVenue().address) {
-          <p class="venue-card__address">📍 {{ topVenue().address }}</p>
-        }
-        @if (topVenue().rating) {
-          <p class="venue-card__rating">⭐ {{ topVenue().rating }}</p>
-        }
-        <div class="venue-card__votes">
-          <app-vote-buttons
-            [placeId]="topVenue().place_id"
-            [venueName]="topVenue().name"
-            [upVotes]="getVoteData(topVenue().place_id).up"
-            [downVotes]="getVoteData(topVenue().place_id).down"
-            (voted)="castVote($event.placeId, topVenue().name, $event.vote)"
-          />
+      <!-- Single participant: waiting-for-others state -->
+      @if (isSingleParticipant()) {
+        <div class="waiting-prominent">
+          <div class="share-section">
+            <p class="share-label">Share this code with friends to join</p>
+            <div class="share-row">
+              <span class="share-code-large">{{ summary()!.session.short_code | shortCode }}</span>
+              <button class="copy-btn" (click)="copyCode()">
+                @if (isCopied()) {
+                  ✓ Copied!
+                } @else {
+                  Copy
+                }
+              </button>
+            </div>
+          </div>
+          <div class="waiting-anim">
+            <div class="pulse-icon">👥</div>
+            <p class="waiting-title">Waiting for friends to join…</p>
+            <p class="waiting-sub">{{ participants()[0].name ?? 'You' }} added their location</p>
+          </div>
         </div>
-        <button
-          class="confirm-btn"
-          (click)="confirmVenue(topVenue().place_id)"
-        >
-          ✓ Confirm this spot
-        </button>
-      </div>
 
-      @if (hasVotes()) {
-        <div class="tally-card">
-          <app-vote-tally
-            [voteSummary]="voteSummary()"
-            [venueNames]="venueNames()"
-          />
+      <!-- Multiple participants, still calculating -->
+      } @else if (!hasMidpoint() || !topVenue()) {
+        <div class="waiting-card">
+          <div class="pulse-icon">🔍</div>
+          <p class="waiting-title">Calculating best meetup spot…</p>
+          <p class="waiting-sub">{{ participants().length }} locations added</p>
         </div>
+
+      <!-- Recommendation + voting -->
+      } @else {
+        <div class="venue-card">
+          <div class="venue-card__label">Top Pick</div>
+          <h2 class="venue-card__name">{{ topVenue().name }}</h2>
+          @if (topVenue().address) {
+            <p class="venue-card__address">📍 {{ topVenue().address }}</p>
+          }
+          @if (topVenue().rating) {
+            <p class="venue-card__rating">⭐ {{ topVenue().rating }}</p>
+          }
+          <div class="venue-card__votes">
+            <app-vote-buttons
+              [placeId]="topVenue().place_id"
+              [venueName]="topVenue().name"
+              [upVotes]="getVoteData(topVenue().place_id).up"
+              [downVotes]="getVoteData(topVenue().place_id).down"
+              (voted)="castVote($event.placeId, topVenue().name, $event.vote)"
+            />
+          </div>
+          <button
+            class="confirm-btn"
+            (click)="confirmVenue(topVenue().place_id)"
+          >
+            ✓ Confirm this spot
+          </button>
+        </div>
+
+        @if (hasVotes()) {
+          <div class="tally-card">
+            <app-vote-tally
+              [voteSummary]="voteSummary()"
+              [venueNames]="venueNames()"
+            />
+          </div>
+        }
       }
     }
 
     <!-- Join section -->
     <div class="join-card">
-      <h2 class="join-title">Join this session</h2>
-      <p class="join-sub">Add your location so the fairest meetup spot can be found.</p>
+      @if (joinSuccessMessage()) {
+        <div class="join-success">
+          <span class="join-success-icon">✓</span>
+          <p class="join-success-text">{{ joinSuccessMessage() }}</p>
+        </div>
+      } @else {
+        <h2 class="join-title">Join this session</h2>
+        <p class="join-sub">Add your location so the fairest meetup spot can be found.</p>
 
-      <div class="join-form">
-        <input
-          class="join-input"
-          type="text"
-          placeholder="Your name (optional)"
-          [value]="joinName()"
-          (input)="joinName.set($any($event.target).value)"
-        />
-
-        <div class="join-input-wrap">
+        <div class="join-form">
           <input
             class="join-input"
             type="text"
-            placeholder="Your address or nearby landmark"
-            [value]="joinAddressQuery()"
-            (input)="onJoinAddressInput($any($event.target).value)"
-            autocomplete="off"
+            placeholder="Your name (optional)"
+            [value]="joinName()"
+            (input)="joinName.set($any($event.target).value)"
           />
-          @if (isResolvingLocation()) {
-            <span class="resolving-spinner"></span>
+
+          <div class="join-input-wrap">
+            <input
+              class="join-input"
+              type="text"
+              placeholder="Your address or nearby landmark"
+              [value]="joinAddressQuery()"
+              (input)="onJoinAddressInput($any($event.target).value)"
+              autocomplete="off"
+            />
+            @if (isResolvingLocation()) {
+              <span class="resolving-spinner"></span>
+            }
+            @if (joinLocation()) {
+              <span class="location-ok">✓</span>
+            }
+            @if (showJoinSuggestions()) {
+              <ul class="address-dropdown">
+                @for (s of joinSuggestions(); track s.placeId) {
+                  <li class="address-option" (click)="selectJoinSuggestion(s)">
+                    <span class="addr-primary">{{ s.primaryText }}</span>
+                    <span class="addr-secondary">{{ s.secondaryText }}</span>
+                  </li>
+                }
+              </ul>
+            }
+          </div>
+
+          @if (joinError()) {
+            <p class="join-error">{{ joinError() }}</p>
           }
-          @if (joinLocation()) {
-            <span class="location-ok">✓</span>
-          }
-          @if (showJoinSuggestions()) {
-            <ul class="address-dropdown">
-              @for (s of joinSuggestions(); track s.placeId) {
-                <li class="address-option" (click)="selectJoinSuggestion(s)">
-                  <span class="addr-primary">{{ s.primaryText }}</span>
-                  <span class="addr-secondary">{{ s.secondaryText }}</span>
-                </li>
-              }
-            </ul>
-          }
+
+          <button
+            class="join-btn"
+            [disabled]="!canJoin()"
+            (click)="joinSession()"
+          >
+            @if (isJoining()) {
+              <span class="btn-spinner"></span>Joining…
+            } @else {
+              Join this session
+            }
+          </button>
         </div>
-
-        @if (joinError()) {
-          <p class="join-error">{{ joinError() }}</p>
-        }
-
-        <button
-          class="join-btn"
-          [disabled]="!canJoin()"
-          (click)="joinSession()"
-        >
-          @if (isJoining()) {
-            <span class="btn-spinner"></span>Joining…
-          } @else {
-            Join this session
-          }
-        </button>
-      </div>
+      }
     </div>
   }
 </div>

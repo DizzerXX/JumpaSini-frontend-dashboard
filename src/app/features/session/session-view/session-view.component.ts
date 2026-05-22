@@ -62,6 +62,13 @@ export class SessionViewComponent implements OnInit {
   summary = signal<SessionSummary | null>(null);
   isLoading = signal(true);
   errorMessage = signal<string | null>(null);
+  isUpdating = signal(false);
+  isCopied = signal(false);
+  joinSuccessMessage = signal<string | null>(null);
+
+  private updateTimer: ReturnType<typeof setTimeout> | null = null;
+  private joinSuccessTimer: ReturnType<typeof setTimeout> | null = null;
+  private copiedTimer: ReturnType<typeof setTimeout> | null = null;
 
   readonly isComplete = computed(() => this.summary()?.is_complete ?? false);
   readonly isPolling = computed(() => {
@@ -73,6 +80,7 @@ export class SessionViewComponent implements OnInit {
   readonly topVenue = computed(() => this.summary()?.recommendation?.best_venue ?? null);
   readonly confirmedVenue = computed(() => this.summary()?.confirmed_venue ?? null);
   readonly hasMidpoint = computed(() => this.summary()?.midpoint !== null);
+  readonly isSingleParticipant = computed(() => this.participants().length === 1);
 
   readonly hoursUntilExpiry = computed(() => {
     const expiry = this.summary()?.expires_at;
@@ -138,6 +146,11 @@ export class SessionViewComponent implements OnInit {
 
   ngOnInit(): void {
     this.shortCode = this.route.snapshot.paramMap.get('shortCode') ?? '';
+    this.destroyRef.onDestroy(() => {
+      if (this.updateTimer) clearTimeout(this.updateTimer);
+      if (this.joinSuccessTimer) clearTimeout(this.joinSuccessTimer);
+      if (this.copiedTimer) clearTimeout(this.copiedTimer);
+    });
     this.loadSummary();
     this.setupPolling();
     this.setupAddressSearch();
@@ -167,7 +180,15 @@ export class SessionViewComponent implements OnInit {
         }),
         takeUntilDestroyed(this.destroyRef),
       )
-      .subscribe((summary) => this.summary.set(summary));
+      .subscribe((summary) => {
+        const prevCount = this.participants().length;
+        this.summary.set(summary);
+        if (summary.participants.length > prevCount && prevCount > 0) {
+          this.isUpdating.set(true);
+          if (this.updateTimer) clearTimeout(this.updateTimer);
+          this.updateTimer = setTimeout(() => this.isUpdating.set(false), 2000);
+        }
+      });
   }
 
   private setupAddressSearch(): void {
@@ -231,6 +252,9 @@ export class SessionViewComponent implements OnInit {
           this.joinAddressQuery.set('');
           this.joinLocation.set(null);
           this.isJoining.set(false);
+          this.joinSuccessMessage.set("You've been added! Results will update shortly.");
+          if (this.joinSuccessTimer) clearTimeout(this.joinSuccessTimer);
+          this.joinSuccessTimer = setTimeout(() => this.joinSuccessMessage.set(null), 3000);
           this.loadSummary();
         },
         error: (err: any) => {
@@ -269,5 +293,16 @@ export class SessionViewComponent implements OnInit {
 
   getVoteData(placeId: string): VoteSummary {
     return this.voteSummary()[placeId] ?? { up: 0, down: 0, total: 0 };
+  }
+
+  async copyCode(): Promise<void> {
+    try {
+      await navigator.clipboard.writeText(this.shortCode);
+      this.isCopied.set(true);
+      if (this.copiedTimer) clearTimeout(this.copiedTimer);
+      this.copiedTimer = setTimeout(() => this.isCopied.set(false), 1500);
+    } catch {
+      // Clipboard API unavailable — fail silently
+    }
   }
 }
