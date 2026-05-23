@@ -1,5 +1,5 @@
 export const MAX_PARTICIPANTS = 6;
-export const MIN_PARTICIPANTS = 2;
+export const MIN_PARTICIPANTS = 1;
 
 export const KL_SELANGOR_BOUNDS = {
   lat: { min: 2.6, max: 3.9 },
@@ -35,13 +35,12 @@ export const APP_STRINGS = {
   VENUE_RIVER: 'River',
 
   ADD_PARTICIPANTS: 'Add Locations',
-  ADD_PARTICIPANTS_SUBTITLE: "Add each person's starting location (max 6)",
+  ADD_PARTICIPANTS_SUBTITLE: "Add your location to start. Share the code for others to join.",
   YOUR_NAME: 'Your name (optional)',
   SEARCH_LOCATION: 'Search location in KL/Selangor...',
   USE_CURRENT_LOCATION: 'Use my current location',
   ADD_PARTICIPANT: 'Add to list',
   PARTICIPANTS_COUNT: 'participants added',
-  MIN_PARTICIPANTS_MSG: 'Add at least 2 locations to continue',
   MAX_PARTICIPANTS_MSG: 'Maximum 6 participants reached',
   CURRENT_LOCATION_LABEL: 'Current Location',
 

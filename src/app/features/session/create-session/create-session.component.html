@@ -156,10 +156,6 @@
         <p class="max-msg">{{ strings.MAX_PARTICIPANTS_MSG }}</p>
       }
 
-      @if (localParticipants().length < 2) {
-        <p class="min-msg">{{ strings.MIN_PARTICIPANTS_MSG }}</p>
-      }
-
       <div class="actions">
         <button class="btn-ghost" type="button" (click)="currentStep.set(1)">
           ← {{ strings.BACK }}
