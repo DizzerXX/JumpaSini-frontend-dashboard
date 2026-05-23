@@ -19,6 +19,11 @@ export class ConfirmedVenueComponent {
   @Input({ required: true }) venue!: ConfirmedVenue;
 
   get mapsUrl(): string {
-    return `https://www.google.com/maps/place/?q=place_id:${this.venue.google_place_id}`;
+    const { latitude: lat, longitude: lng, google_place_id: placeId } = this.venue;
+    if (lat != null && lng != null) {
+      const base = `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`;
+      return placeId ? `${base}&query_place_id=${placeId}` : base;
+    }
+    return `https://www.google.com/maps/search/?api=1&query=place_id:${placeId}`;
   }
 }
