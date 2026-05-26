@@ -26,6 +26,7 @@ import {
 } from 'rxjs';
 
 import { CollaborationService } from '../../../core/services/collaboration.service';
+import { RecommendationService } from '../../../core/services/recommendation.service';
 import { SessionService } from '../../../core/services/session.service';
 import { GeoService, PlaceSuggestion, ResolvedLocation } from '../../../core/services/geo.service';
 import { SessionSummary, VoteSummary } from '../../../core/models/collaboration.model';
@@ -58,9 +59,11 @@ import { VotingWinnerComponent } from '../../../shared/components/voting-winner/
 export class SessionViewComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly collaborationService = inject(CollaborationService);
+  private readonly recommendationService = inject(RecommendationService);
   private readonly sessionService = inject(SessionService);
   private readonly geoService = inject(GeoService);
   private readonly destroyRef = inject(DestroyRef);
+  private _venuesFetched = false;
 
   shortCode = '';
 
@@ -140,11 +143,7 @@ export class SessionViewComponent implements OnInit {
     return null;
   });
 
-  readonly venueNames = computed<Record<string, string>>(() => {
-    const venues = this.summary()?.recommendation?.venues as any[] | undefined;
-    if (!venues) return {};
-    return Object.fromEntries(venues.map((v: any) => [v.place_id, v.name]));
-  });
+  readonly venueNames = signal<Record<string, string>>({});
 
   // Join form
   joinName = signal('');
@@ -186,12 +185,41 @@ export class SessionViewComponent implements OnInit {
       next: (summary) => {
         this.summary.set(summary);
         this.isLoading.set(false);
+        this.updateVenueNames(summary);
       },
       error: (err: any) => {
         this.errorMessage.set(err?.message ?? 'Session not found.');
         this.isLoading.set(false);
       },
     });
+  }
+
+  private updateVenueNames(summary: SessionSummary): void {
+    // Seed from best_venue immediately (no network call needed)
+    const bestVenue = summary.recommendation?.best_venue;
+    if (bestVenue?.place_id && bestVenue?.name) {
+      this.venueNames.update((names) =>
+        names[bestVenue.place_id]
+          ? names
+          : { ...names, [bestVenue.place_id]: bestVenue.name },
+      );
+    }
+    // Fetch all 5 venue names once midpoint is available
+    if (summary.midpoint && !this._venuesFetched) {
+      this._venuesFetched = true;
+      this.recommendationService
+        .getVenues(this.shortCode)
+        .pipe(catchError(() => of([])), takeUntilDestroyed(this.destroyRef))
+        .subscribe((venues: any[]) => {
+          const names: Record<string, string> = {};
+          for (const v of venues) {
+            if (v.place_id && v.name) names[v.place_id] = v.name;
+          }
+          if (Object.keys(names).length > 0) {
+            this.venueNames.set(names);
+          }
+        });
+    }
   }
 
   private setupPolling(): void {
@@ -212,6 +240,7 @@ export class SessionViewComponent implements OnInit {
       .subscribe((summary) => {
         const prevCount = this.participants().length;
         this.summary.set(summary);
+        this.updateVenueNames(summary);
         if (summary.participants.length > prevCount && prevCount > 0) {
           this.isUpdating.set(true);
           if (this.updateTimer) clearTimeout(this.updateTimer);
