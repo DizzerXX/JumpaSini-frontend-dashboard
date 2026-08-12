@@ -143,54 +143,58 @@
           <app-voting-winner [voteSummary]="voteSummary()" [venueNames]="venueNames()" />
         }
 
-        <div class="venue-card">
-          <div class="venue-card__label">Top Pick</div>
-          <h2 class="venue-card__name">{{ topVenue().name }}</h2>
-          @if (topVenue().address) {
-            <p class="venue-card__address">📍 {{ topVenue().address }}</p>
-          }
-          @if (topVenue().rating) {
-            <p class="venue-card__rating">⭐ {{ topVenue().rating }}</p>
-          }
-          <div class="venue-card__votes">
-            <app-vote-buttons
-              [placeId]="topVenue().place_id"
-              [venueName]="topVenue().name"
-              [upVotes]="getVoteData(topVenue().place_id).up"
-              [downVotes]="getVoteData(topVenue().place_id).down"
-              (voted)="castVote($event.placeId, topVenue().name, $event.vote)"
-            />
+        <!-- Aliased so the template type-checker narrows away the null: the outer
+             branch already guarantees topVenue() is set, but each call is opaque to it. -->
+        @if (topVenue(); as venue) {
+          <div class="venue-card">
+            <div class="venue-card__label">Top Pick</div>
+            <h2 class="venue-card__name">{{ venue.name }}</h2>
+            @if (venue.address) {
+              <p class="venue-card__address">📍 {{ venue.address }}</p>
+            }
+            @if (venue.rating) {
+              <p class="venue-card__rating">⭐ {{ venue.rating }}</p>
+            }
+            <div class="venue-card__votes">
+              <app-vote-buttons
+                [placeId]="venue.place_id"
+                [venueName]="venue.name"
+                [upVotes]="getVoteData(venue.place_id).up"
+                [downVotes]="getVoteData(venue.place_id).down"
+                (voted)="castVote($event.placeId, venue.name, $event.vote)"
+              />
+            </div>
+            @if (!hasJoined()) {
+              <p class="vote-hint" role="note">
+                Add your location below to vote on this spot.
+              </p>
+            }
+            @if (actionError()) {
+              <p class="action-error" role="alert">{{ actionError() }}</p>
+            }
+            @if (!isVotingActive()) {
+              <button
+                class="confirm-btn"
+                (click)="confirmVenue(venue.place_id)"
+              >
+                ✓ Confirm this spot
+              </button>
+            }
+            @if (showStartVoting()) {
+              <button
+                class="start-voting-btn"
+                [disabled]="isStartingVoting()"
+                (click)="startVoting()"
+              >
+                @if (isStartingVoting()) {
+                  <span class="btn-spinner"></span> Starting…
+                } @else {
+                  🗳️ Start Group Voting
+                }
+              </button>
+            }
           </div>
-          @if (!hasJoined()) {
-            <p class="vote-hint" role="note">
-              Add your location below to vote on this spot.
-            </p>
-          }
-          @if (actionError()) {
-            <p class="action-error" role="alert">{{ actionError() }}</p>
-          }
-          @if (!isVotingActive()) {
-            <button
-              class="confirm-btn"
-              (click)="confirmVenue(topVenue().place_id)"
-            >
-              ✓ Confirm this spot
-            </button>
-          }
-          @if (showStartVoting()) {
-            <button
-              class="start-voting-btn"
-              [disabled]="isStartingVoting()"
-              (click)="startVoting()"
-            >
-              @if (isStartingVoting()) {
-                <span class="btn-spinner"></span> Starting…
-              } @else {
-                🗳️ Start Group Voting
-              }
-            </button>
-          }
-        </div>
+        }
 
         @if (hasVotes()) {
           <div class="tally-card">
