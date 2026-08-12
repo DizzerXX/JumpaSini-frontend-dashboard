@@ -196,6 +196,51 @@
           </div>
         }
 
+        @if (otherVenues().length > 0) {
+          <div class="alternatives">
+            <h3 class="alternatives__title">Other options nearby</h3>
+
+            @for (venue of otherVenues(); track venue.place_id) {
+              <div class="alt-card">
+                <div class="alt-card__info">
+                  <p class="alt-card__name">{{ venue.name }}</p>
+                  @if (venue.address) {
+                    <p class="alt-card__address">📍 {{ venue.address }}</p>
+                  }
+                  <p class="alt-card__meta">
+                    @if (venue.rating) {
+                      <span>⭐ {{ venue.rating }}</span>
+                    }
+                    @if (venue.is_halal) {
+                      <span class="alt-card__halal">🥗 Halal</span>
+                    }
+                    @if (venue.distance_meters) {
+                      <span>{{ venue.distance_meters }}m from midpoint</span>
+                    }
+                  </p>
+                </div>
+
+                <app-vote-buttons
+                  [placeId]="venue.place_id"
+                  [venueName]="venue.name"
+                  [upVotes]="getVoteData(venue.place_id).up"
+                  [downVotes]="getVoteData(venue.place_id).down"
+                  (voted)="castVote($event.placeId, venue.name, $event.vote)"
+                />
+
+                @if (!isVotingActive()) {
+                  <button
+                    class="alt-card__confirm"
+                    (click)="confirmVenue(venue.place_id)"
+                  >
+                    Pick this instead
+                  </button>
+                }
+              </div>
+            }
+          </div>
+        }
+
         @if (hasVotes()) {
           <div class="tally-card">
             <app-vote-tally

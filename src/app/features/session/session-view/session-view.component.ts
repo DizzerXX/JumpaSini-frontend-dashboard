@@ -155,6 +155,18 @@ export class SessionViewComponent implements OnInit {
 
   readonly venueNames = signal<Record<string, string>>({});
 
+  /** All discovered venues, best pick first. */
+  readonly venues = signal<RecommendedVenue[]>([]);
+
+  /**
+   * Runner-up suggestions. The top pick already has its own card, so it is excluded
+   * here rather than rendered twice.
+   */
+  readonly otherVenues = computed(() => {
+    const best = this.topVenue()?.place_id;
+    return this.venues().filter((v) => v.place_id !== best);
+  });
+
   // Join form
   joinName = signal('');
   joinAddressQuery = signal('');
@@ -216,13 +228,16 @@ export class SessionViewComponent implements OnInit {
           : { ...names, [bestVenue.place_id]: bestVenue.name },
       );
     }
-    // Fetch all 5 venue names once midpoint is available
+    // Fetch the full venue list once a midpoint exists — used both to label the
+    // vote tally and to render the runner-up suggestions.
     if (summary.midpoint && !this._venuesFetched) {
       this._venuesFetched = true;
       this.recommendationService
         .getVenues(this.shortCode)
         .pipe(catchError(() => of([])), takeUntilDestroyed(this.destroyRef))
         .subscribe((venues: RecommendedVenue[]) => {
+          this.venues.set(venues);
+
           const names: Record<string, string> = {};
           for (const v of venues) {
             if (v.place_id && v.name) names[v.place_id] = v.name;

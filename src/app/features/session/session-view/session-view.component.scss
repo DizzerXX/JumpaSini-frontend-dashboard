@@ -603,3 +603,54 @@
   color: #6b7280;
   font-style: italic;
 }
+
+// Runner-up suggestions. Deliberately lighter than .venue-card so the top pick
+// still reads as the recommendation rather than one option among equals.
+.alternatives {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+
+  &__title {
+    font-size: 13px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    color: #6b7280;
+    margin: 4px 0 0;
+  }
+}
+
+// Extends .venue-card so the shared surface/border/radius are declared once.
+.alt-card {
+  @extend .venue-card;
+  padding: 14px 16px;
+
+  &__name { font-size: 15px; font-weight: 700; margin: 0; }
+  &__address { font-size: 13px; color: #6b7280; margin: 2px 0 0; }
+
+  &__meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    font-size: 12px;
+    color: #6b7280;
+    margin: 4px 0 0;
+  }
+
+  &__halal { color: #15803d; font-weight: 600; }
+
+  &__confirm {
+    align-self: flex-start;
+    background: none;
+    border: 1px solid var(--primary);
+    color: var(--primary);
+    border-radius: 10px;
+    padding: 6px 14px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+
+    &:hover { background: var(--primary); color: #fff; }
+  }
+}
