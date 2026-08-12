@@ -7,6 +7,7 @@ import { firstValueFrom } from 'rxjs';
 import { routes } from './app.routes';
 import { apiInterceptor } from './core/interceptors/api.interceptor';
 import { errorInterceptor } from './core/interceptors/error.interceptor';
+import { participantInterceptor } from './core/interceptors/participant.interceptor';
 import { AdminAuthService } from './core/services/admin-auth.service';
 import { environment } from '../environments/environment';
 
@@ -38,7 +39,9 @@ function rehydrateAdminSession(auth: AdminAuthService): () => Promise<void> {
 export const appConfig: ApplicationConfig = {
   providers: [
     provideRouter(routes),
-    provideHttpClient(withInterceptors([apiInterceptor, errorInterceptor])),
+    provideHttpClient(
+      withInterceptors([apiInterceptor, participantInterceptor, errorInterceptor]),
+    ),
     provideAnimations(),
     {
       provide: APP_INITIALIZER,

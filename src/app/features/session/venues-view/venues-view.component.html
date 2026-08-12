@@ -1,0 +1,136 @@
+<div class="venues-page">
+  <header class="venues-header">
+    <button class="back-btn" (click)="back()" aria-label="Back to session">← Back</button>
+    <h1 class="venues-title">All meetup spots</h1>
+  </header>
+
+  @if (isLoading()) {
+    <div class="state-card">
+      <span class="spinner"></span>
+      <p>Finding venues…</p>
+    </div>
+  } @else if (errorMessage()) {
+    <div class="state-card">
+      <p class="state-text">{{ errorMessage() }}</p>
+    </div>
+  } @else {
+    <div class="controls">
+      <div class="tabs" role="tablist">
+        <button
+          class="tab"
+          role="tab"
+          [class.tab--active]="mode() === 'list'"
+          [attr.aria-selected]="mode() === 'list'"
+          (click)="setMode('list')"
+        >
+          List
+        </button>
+        <button
+          class="tab"
+          role="tab"
+          [class.tab--active]="mode() === 'map'"
+          [attr.aria-selected]="mode() === 'map'"
+          (click)="setMode('map')"
+        >
+          Map
+        </button>
+      </div>
+
+      <button
+        class="filter-btn"
+        [class.filter-btn--active]="halalOnly()"
+        [attr.aria-pressed]="halalOnly()"
+        (click)="toggleHalal()"
+      >
+        🥗 Halal only
+      </button>
+    </div>
+
+    @if (actionError()) {
+      <p class="action-error" role="alert">{{ actionError() }}</p>
+    }
+
+    @if (!canVote()) {
+      <p class="vote-hint" role="note">Join the session to vote on these spots.</p>
+    }
+
+    @if (mode() === 'map') {
+      <div class="map-wrap">
+        <google-map
+          height="380px"
+          width="100%"
+          [center]="mapCenter()"
+          [options]="mapOptions"
+        >
+          @for (marker of markers(); track marker.title) {
+            <map-marker
+              [position]="marker.position"
+              [title]="marker.title"
+              [options]="marker.options"
+            />
+          }
+        </google-map>
+      </div>
+    } @else {
+      @if (visibleVenues().length === 0) {
+        <div class="state-card">
+          <p class="state-text">No venues match this filter.</p>
+        </div>
+      }
+
+      <div class="venue-list">
+        @for (venue of visibleVenues(); track venue.place_id) {
+          <div class="venue-item" [class.venue-item--best]="venue.is_best_pick">
+            @if (venue.is_best_pick) {
+              <span class="best-badge">★ Top pick</span>
+            }
+
+            <p class="venue-item__name">{{ venue.name }}</p>
+
+            @if (venue.address) {
+              <p class="venue-item__address">📍 {{ venue.address }}</p>
+            }
+
+            <p class="venue-item__meta">
+              @if (venue.rating) {
+                <span>⭐ {{ venue.rating }}</span>
+              }
+              @if (venue.is_halal) {
+                <span class="venue-item__halal">🥗 Halal</span>
+              }
+              @if (venue.distance_meters) {
+                <span>{{ venue.distance_meters }}m from midpoint</span>
+              }
+            </p>
+
+            <div class="venue-item__actions">
+              <app-vote-buttons
+                [placeId]="venue.place_id"
+                [venueName]="venue.name"
+                [upVotes]="getVoteData(venue.place_id).up"
+                [downVotes]="getVoteData(venue.place_id).down"
+                [myVote]="getVoteData(venue.place_id).my_vote"
+                (voted)="castVote($event.placeId, venue.name, $event.vote)"
+              />
+
+              <button class="pick-btn" (click)="confirmVenue(venue.place_id)">
+                Pick this
+              </button>
+            </div>
+
+            @if (venue.google_maps_url) {
+              <a
+                class="directions-link"
+                [href]="venue.google_maps_url"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Open in Google Maps ↗
+              </a>
+            }
+          </div>
+        }
+      </div>
+    }
+  }
+</div>

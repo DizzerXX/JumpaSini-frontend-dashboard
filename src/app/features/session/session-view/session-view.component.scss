@@ -604,6 +604,20 @@
   font-style: italic;
 }
 
+.see-all-btn {
+  width: 100%;
+  background: none;
+  border: 1px dashed var(--border-color);
+  border-radius: var(--border-radius);
+  padding: 12px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--primary);
+  cursor: pointer;
+
+  &:hover { border-color: var(--primary); background: #fff5f3; }
+}
+
 // Runner-up suggestions. Deliberately lighter than .venue-card so the top pick
 // still reads as the recommendation rather than one option among equals.
 .alternatives {

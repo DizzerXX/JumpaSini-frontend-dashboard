@@ -2,6 +2,8 @@ export interface VoteSummary {
   up: number;
   down: number;
   total: number;
+  /** This participant's own vote, or null if it hasn't voted on this venue. */
+  my_vote: 'up' | 'down' | null;
 }
 
 export interface VotingState {

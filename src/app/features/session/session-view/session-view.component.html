@@ -112,6 +112,13 @@
                   Copy
                 }
               </button>
+              <button class="copy-btn" (click)="shareSession()">
+                @if (isShared()) {
+                  ✓ Link copied!
+                } @else {
+                  Share
+                }
+              </button>
             </div>
           </div>
           <div class="waiting-anim">
@@ -161,6 +168,7 @@
                 [venueName]="venue.name"
                 [upVotes]="getVoteData(venue.place_id).up"
                 [downVotes]="getVoteData(venue.place_id).down"
+                [myVote]="getVoteData(venue.place_id).my_vote"
                 (voted)="castVote($event.placeId, venue.name, $event.vote)"
               />
             </div>
@@ -225,6 +233,7 @@
                   [venueName]="venue.name"
                   [upVotes]="getVoteData(venue.place_id).up"
                   [downVotes]="getVoteData(venue.place_id).down"
+                  [myVote]="getVoteData(venue.place_id).my_vote"
                   (voted)="castVote($event.placeId, venue.name, $event.vote)"
                 />
 
@@ -239,6 +248,12 @@
               </div>
             }
           </div>
+        }
+
+        @if (hasMidpoint()) {
+          <button class="see-all-btn" (click)="seeAllVenues()">
+            🗺️ See all spots &amp; map
+          </button>
         }
 
         @if (hasVotes()) {

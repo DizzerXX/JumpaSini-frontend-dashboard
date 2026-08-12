@@ -9,7 +9,7 @@ import {
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { GoogleMap, MapMarker } from '@angular/google-maps';
 import {
@@ -63,6 +63,7 @@ import { VotingWinnerComponent } from '../../../shared/components/voting-winner/
 })
 export class SessionViewComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
   private readonly collaborationService = inject(CollaborationService);
   private readonly recommendationService = inject(RecommendationService);
   private readonly sessionService = inject(SessionService);
@@ -77,6 +78,7 @@ export class SessionViewComponent implements OnInit {
   errorMessage = signal<string | null>(null);
   isUpdating = signal(false);
   isCopied = signal(false);
+  isShared = signal(false);
   joinSuccessMessage = signal<string | null>(null);
   /** Transient failure banner for vote/confirm actions. */
   actionError = signal<string | null>(null);
@@ -86,6 +88,7 @@ export class SessionViewComponent implements OnInit {
   private updateTimer: ReturnType<typeof setTimeout> | null = null;
   private joinSuccessTimer: ReturnType<typeof setTimeout> | null = null;
   private copiedTimer: ReturnType<typeof setTimeout> | null = null;
+  private sharedTimer: ReturnType<typeof setTimeout> | null = null;
   private expiryTimer: ReturnType<typeof setTimeout> | null = null;
   private actionErrorTimer: ReturnType<typeof setTimeout> | null = null;
 
@@ -195,6 +198,7 @@ export class SessionViewComponent implements OnInit {
       if (this.updateTimer) clearTimeout(this.updateTimer);
       if (this.joinSuccessTimer) clearTimeout(this.joinSuccessTimer);
       if (this.copiedTimer) clearTimeout(this.copiedTimer);
+      if (this.sharedTimer) clearTimeout(this.sharedTimer);
       if (this.expiryTimer) clearTimeout(this.expiryTimer);
       if (this.actionErrorTimer) clearTimeout(this.actionErrorTimer);
     });
@@ -432,8 +436,47 @@ export class SessionViewComponent implements OnInit {
     }, 3000);
   }
 
+  /** Falls back to an empty tally so the template can bind unconditionally. */
   getVoteData(placeId: string): VoteSummary {
-    return this.voteSummary()[placeId] ?? { up: 0, down: 0, total: 0 };
+    return this.voteSummary()[placeId] ?? { up: 0, down: 0, total: 0, my_vote: null };
+  }
+
+  seeAllVenues(): void {
+    this.router.navigate(['/session', this.shortCode, 'venues']);
+  }
+
+  /**
+   * Shares the session link via the Web Share API, falling back to the clipboard.
+   * navigator.share only exists on secure origins and mostly on mobile browsers,
+   * so the fallback is the common path on desktop.
+   */
+  async shareSession(): Promise<void> {
+    const url = this.summary()?.session.shareable_url
+      ?? `${window.location.origin}/session/${this.shortCode}`;
+
+    const shareData = {
+      title: 'JumpaSini',
+      text: `Join my JumpaSini session — code ${this.shortCode}`,
+      url,
+    };
+
+    if (navigator.share) {
+      try {
+        await navigator.share(shareData);
+        return;
+      } catch {
+        // User dismissed the sheet, or sharing failed — fall through to copying.
+      }
+    }
+
+    try {
+      await navigator.clipboard.writeText(url);
+      this.isShared.set(true);
+      if (this.sharedTimer) clearTimeout(this.sharedTimer);
+      this.sharedTimer = setTimeout(() => this.isShared.set(false), 1500);
+    } catch {
+      this.showActionError('Could not share the link. Copy it from the address bar.');
+    }
   }
 
   async copyCode(): Promise<void> {

@@ -28,6 +28,13 @@ export const routes: Routes = [
         (m) => m.SessionViewComponent,
       ),
   },
+  {
+    path: 'session/:shortCode/venues',
+    loadComponent: () =>
+      import('./features/session/venues-view/venues-view.component').then(
+        (m) => m.VenuesViewComponent,
+      ),
+  },
   // ─── Admin (lazy chunk) ──────────────────────────────────────
   {
     path: 'admin/login',
