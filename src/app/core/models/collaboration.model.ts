@@ -15,8 +15,31 @@ export interface VotingState {
 export interface VotePayload {
   googlePlaceId: string;
   venueName: string;
-  participantName?: string | null;
   vote: 'up' | 'down';
+}
+
+/** Venue shape returned inside a recommendation. */
+export interface RecommendedVenue {
+  place_id: string;
+  name: string;
+  address: string | null;
+  lat: number | null;
+  lng: number | null;
+  rating: number | null;
+  is_halal: boolean | null;
+  is_halal_verified: boolean;
+  distance_meters: number | null;
+  photo_url: string | null;
+  google_maps_url: string | null;
+  travel_times: Record<string, { seconds: number; text: string }>;
+  is_best_pick: boolean;
+  score: number | null;
+}
+
+export interface Recommendation {
+  best_venue: RecommendedVenue | null;
+  alternatives?: RecommendedVenue[];
+  fairness_score?: number | null;
 }
 
 export interface ConfirmVenuePayload {
@@ -52,7 +75,7 @@ export interface SessionSummary {
   midpoint: { lat: number; lng: number } | null;
   confirmed_venue: ConfirmedVenue | null;
   vote_summary: Record<string, VoteSummary>;
-  recommendation: any | null;
+  recommendation: Recommendation | null;
   is_complete: boolean;
   expires_at: string;
   voting_state?: VotingState;

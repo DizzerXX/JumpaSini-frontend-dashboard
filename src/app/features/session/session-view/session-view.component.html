@@ -161,6 +161,14 @@
               (voted)="castVote($event.placeId, topVenue().name, $event.vote)"
             />
           </div>
+          @if (!hasJoined()) {
+            <p class="vote-hint" role="note">
+              Add your location below to vote on this spot.
+            </p>
+          }
+          @if (actionError()) {
+            <p class="action-error" role="alert">{{ actionError() }}</p>
+          }
           @if (!isVotingActive()) {
             <button
               class="confirm-btn"

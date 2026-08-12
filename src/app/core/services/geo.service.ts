@@ -1,8 +1,8 @@
-import { Injectable } from '@angular/core';
-import { Observable, from, fromEventPattern } from 'rxjs';
-import { map, switchMap, take } from 'rxjs/operators';
+import { Injectable, inject } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { Observable, map } from 'rxjs';
 
-import { KL_SELANGOR_BOUNDS } from '../constants/app.constants';
+import { API_ENDPOINTS } from '../constants/api.constants';
 
 export interface PlaceSuggestion {
   placeId: string;
@@ -17,89 +17,82 @@ export interface ResolvedLocation {
   longitude: number;
 }
 
+interface ApiResponse<T> {
+  success: boolean;
+  data: T;
+  message: string;
+}
+
+interface SuggestionDto {
+  place_id: string;
+  primary_text: string;
+  secondary_text: string;
+  full_text: string;
+}
+
+interface PlaceDetailsDto {
+  place_id: string;
+  name: string | null;
+  address: string;
+  lat: number;
+  lng: number;
+}
+
+/**
+ * Location lookups, all proxied through the backend.
+ *
+ * Deliberately does NOT touch the Google Places JS API directly: the backend holds
+ * the only Places-capable key and caches every lookup, so autocomplete isn't billed
+ * once per keystroke per user. The Maps JS API is still loaded in app.config.ts, but
+ * only to render map tiles.
+ */
 @Injectable({ providedIn: 'root' })
 export class GeoService {
+  private readonly http = inject(HttpClient);
+
   /**
-   * Returns address autocomplete suggestions using Google Places JS API,
-   * restricted to Malaysia and biased toward KL/Selangor.
+   * Session token groups a user's keystrokes plus the final details call into one
+   * billable Google autocomplete session. Regenerated after each resolved place.
    */
+  private sessionToken = this.newSessionToken();
+
   getAddressSuggestions(query: string): Observable<PlaceSuggestion[]> {
-    return new Observable<PlaceSuggestion[]>((observer) => {
-      if (!query.trim() || query.length < 3) {
-        observer.next([]);
-        observer.complete();
-        return;
-      }
-
-      const service = new google.maps.places.AutocompleteService();
-      const bounds = new google.maps.LatLngBounds(
-        { lat: KL_SELANGOR_BOUNDS.lat.min, lng: KL_SELANGOR_BOUNDS.lng.min },
-        { lat: KL_SELANGOR_BOUNDS.lat.max, lng: KL_SELANGOR_BOUNDS.lng.max },
+    return this.http
+      .get<ApiResponse<SuggestionDto[]>>(API_ENDPOINTS.PLACE_AUTOCOMPLETE, {
+        params: { input: query, session_token: this.sessionToken },
+      })
+      .pipe(
+        map((res) =>
+          (res.data ?? []).map((s) => ({
+            placeId: s.place_id,
+            primaryText: s.primary_text,
+            secondaryText: s.secondary_text,
+            fullText: s.full_text,
+          })),
+        ),
       );
-
-      service.getPlacePredictions(
-        {
-          input: query,
-          componentRestrictions: { country: 'MY' },
-          bounds,
-        },
-        (predictions, status) => {
-          if (
-            status !== google.maps.places.PlacesServiceStatus.OK ||
-            !predictions
-          ) {
-            observer.next([]);
-            observer.complete();
-            return;
-          }
-
-          const suggestions: PlaceSuggestion[] = predictions.map((p) => ({
-            placeId: p.place_id,
-            primaryText: p.structured_formatting.main_text,
-            secondaryText: p.structured_formatting.secondary_text ?? '',
-            fullText: p.description,
-          }));
-
-          observer.next(suggestions);
-          observer.complete();
-        },
-      );
-    });
   }
 
-  /**
-   * Resolves a placeId to lat/lng + formatted address using the Places Detail API.
-   */
   resolvePlaceId(placeId: string): Observable<ResolvedLocation> {
-    return new Observable<ResolvedLocation>((observer) => {
-      const dummyEl = document.createElement('div');
-      const service = new google.maps.places.PlacesService(dummyEl);
+    return this.http
+      .get<ApiResponse<PlaceDetailsDto>>(API_ENDPOINTS.PLACE_DETAILS(placeId), {
+        params: { session_token: this.sessionToken },
+      })
+      .pipe(
+        map((res) => {
+          // The autocomplete session ends once a place is resolved.
+          this.sessionToken = this.newSessionToken();
 
-      service.getDetails(
-        { placeId, fields: ['geometry', 'formatted_address'] },
-        (place, status) => {
-          if (
-            status !== google.maps.places.PlacesServiceStatus.OK ||
-            !place?.geometry?.location
-          ) {
-            observer.error(new Error('Could not resolve place details.'));
-            return;
-          }
-
-          observer.next({
-            address: place.formatted_address ?? '',
-            latitude: place.geometry.location.lat(),
-            longitude: place.geometry.location.lng(),
-          });
-          observer.complete();
-        },
+          return {
+            address: res.data.address,
+            latitude: res.data.lat,
+            longitude: res.data.lng,
+          };
+        }),
       );
-    });
   }
 
-  /**
-   * Wraps browser navigator.geolocation.getCurrentPosition in an Observable.
-   */
+  /** Wraps browser navigator.geolocation.getCurrentPosition in an Observable. */
   getCurrentPosition(): Observable<GeolocationCoordinates> {
     return new Observable<GeolocationCoordinates>((observer) => {
       if (!navigator.geolocation) {
@@ -112,36 +105,21 @@ export class GeoService {
           observer.next(position.coords);
           observer.complete();
         },
-        (err) => {
-          observer.error(err);
-        },
+        (err) => observer.error(err),
         { enableHighAccuracy: true, timeout: 10000 },
       );
     });
   }
 
-  /**
-   * Returns a human-readable address for the given coordinates
-   * using Google Maps Geocoding API.
-   */
   reverseGeocode(lat: number, lng: number): Observable<string> {
-    return new Observable<string>((observer) => {
-      const geocoder = new google.maps.Geocoder();
+    return this.http
+      .get<ApiResponse<{ address: string }>>(API_ENDPOINTS.PLACE_REVERSE_GEOCODE, {
+        params: { lat, lng },
+      })
+      .pipe(map((res) => res.data.address));
+  }
 
-      geocoder.geocode({ location: { lat, lng } }, (results, status) => {
-        if (
-          status !== google.maps.GeocoderStatus.OK ||
-          !results ||
-          results.length === 0
-        ) {
-          observer.next(`${lat.toFixed(6)}, ${lng.toFixed(6)}`);
-          observer.complete();
-          return;
-        }
-
-        observer.next(results[0].formatted_address);
-        observer.complete();
-      });
-    });
+  private newSessionToken(): string {
+    return crypto.randomUUID();
   }
 }

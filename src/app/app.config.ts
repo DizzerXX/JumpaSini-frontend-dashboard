@@ -2,10 +2,12 @@ import { ApplicationConfig, APP_INITIALIZER } from '@angular/core';
 import { provideRouter } from '@angular/router';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { provideAnimations } from '@angular/platform-browser/animations';
+import { firstValueFrom } from 'rxjs';
 
 import { routes } from './app.routes';
 import { apiInterceptor } from './core/interceptors/api.interceptor';
 import { errorInterceptor } from './core/interceptors/error.interceptor';
+import { AdminAuthService } from './core/services/admin-auth.service';
 import { environment } from '../environments/environment';
 
 function loadGoogleMaps(): () => Promise<void> {
@@ -20,6 +22,19 @@ function loadGoogleMaps(): () => Promise<void> {
   });
 }
 
+// Token persistence brings back `isAuthenticated()` after a refresh, but the admin's
+// name/email (admin$) still needs fetching once. Do it here rather than blocking every
+// admin route on it; a stale/revoked token just fails silently — the error interceptor's
+// 401 handling clears it and the admin guard sends them back to login on next navigation.
+function rehydrateAdminSession(auth: AdminAuthService): () => Promise<void> {
+  return () => {
+    if (!auth.isAuthenticated()) return Promise.resolve();
+    return firstValueFrom(auth.getMe())
+      .then(() => undefined)
+      .catch(() => undefined);
+  };
+}
+
 export const appConfig: ApplicationConfig = {
   providers: [
     provideRouter(routes),
@@ -28,6 +43,12 @@ export const appConfig: ApplicationConfig = {
     {
       provide: APP_INITIALIZER,
       useFactory: loadGoogleMaps,
+      multi: true,
+    },
+    {
+      provide: APP_INITIALIZER,
+      useFactory: rehydrateAdminSession,
+      deps: [AdminAuthService],
       multi: true,
     },
   ],

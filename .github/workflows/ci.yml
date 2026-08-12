@@ -1,0 +1,47 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          # Angular 17 requires Node 18+; package.json engines pins 20.x.
+          node-version: '20'
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build (production)
+        run: npm run build
+
+      - name: Test
+        # ChromeHeadless is preinstalled on ubuntu-latest runners.
+        run: npm test -- --watch=false --browsers=ChromeHeadless
+
+      # All Google Places/geocoding calls must go through the backend proxy so no
+      # Places-capable key ships in the bundle. Only map *rendering* may use a
+      # browser-restricted Maps JS key.
+      - name: Assert no direct Google Places/geocoding calls
+        run: |
+          if grep -rn "google\.maps\.places\|new google\.maps\.Geocoder" src/; then
+            echo "::error::Direct Google Places/Geocoder call found. Use the backend /places proxy."
+            exit 1
+          fi
+
+      - name: Assert no hardcoded Google API key
+        run: |
+          if grep -rn "AIza[0-9A-Za-z_-]\{35\}" src/; then
+            echo "::error::Hardcoded Google API key found in src/."
+            exit 1
+          fi

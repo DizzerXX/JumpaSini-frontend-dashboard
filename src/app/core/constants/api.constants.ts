@@ -14,4 +14,9 @@ export const API_ENDPOINTS = {
   RECOMMENDATION: (shortCode: string) => `${API_BASE_URL}/sessions/${shortCode}/recommendation`,
   VENUES: (shortCode: string) => `${API_BASE_URL}/sessions/${shortCode}/venues`,
   VOTING_START: (shortCode: string) => `${API_BASE_URL}/sessions/${shortCode}/voting/start`,
+
+  // Places proxy — the backend owns the Google key and caches every lookup.
+  PLACE_AUTOCOMPLETE: `${API_BASE_URL}/places/autocomplete`,
+  PLACE_REVERSE_GEOCODE: `${API_BASE_URL}/places/reverse-geocode`,
+  PLACE_DETAILS: (placeId: string) => `${API_BASE_URL}/places/${placeId}`,
 } as const;

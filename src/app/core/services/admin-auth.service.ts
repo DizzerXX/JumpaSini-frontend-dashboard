@@ -11,12 +11,17 @@ interface ApiResponse<T> {
   message: string;
 }
 
+const TOKEN_STORAGE_KEY = 'jumpasini_admin_token';
+
 @Injectable({ providedIn: 'root' })
 export class AdminAuthService {
   private readonly http = inject(HttpClient);
   private readonly baseUrl = `${environment.apiBaseUrl}/admin`;
 
-  readonly token$ = new BehaviorSubject<string | null>(null);
+  // Seeded from localStorage so a page refresh doesn't log the admin out — the
+  // Sanctum token itself is still valid server-side even though this in-memory
+  // subject would otherwise reset to null on every reload.
+  readonly token$ = new BehaviorSubject<string | null>(this.readStoredToken());
   readonly admin$ = new BehaviorSubject<AdminModel | null>(null);
 
   isAuthenticated(): boolean {
@@ -30,6 +35,7 @@ export class AdminAuthService {
   login(payload: LoginPayload): Observable<AuthResponse> {
     return this.http.post<ApiResponse<AuthResponse>>(`${this.baseUrl}/login`, payload).pipe(
       tap((res) => {
+        this.storeToken(res.data.token);
         this.token$.next(res.data.token);
         this.admin$.next(res.data.admin);
       }),
@@ -39,12 +45,41 @@ export class AdminAuthService {
 
   logout(): Observable<void> {
     return this.http.post<ApiResponse<null>>(`${this.baseUrl}/logout`, {}).pipe(
-      tap(() => {
-        this.token$.next(null);
-        this.admin$.next(null);
-      }),
+      tap(() => this.clearSession()),
       map(() => void 0),
     );
+  }
+
+  /** Drops the local session without calling the backend — used when a token
+   *  has already been rejected (401) so there's nothing left to revoke. */
+  clearSession(): void {
+    this.removeStoredToken();
+    this.token$.next(null);
+    this.admin$.next(null);
+  }
+
+  private readStoredToken(): string | null {
+    try {
+      return localStorage.getItem(TOKEN_STORAGE_KEY);
+    } catch {
+      return null;
+    }
+  }
+
+  private storeToken(token: string): void {
+    try {
+      localStorage.setItem(TOKEN_STORAGE_KEY, token);
+    } catch {
+      // localStorage unavailable (private browsing, etc.) — session just won't survive a refresh.
+    }
+  }
+
+  private removeStoredToken(): void {
+    try {
+      localStorage.removeItem(TOKEN_STORAGE_KEY);
+    } catch {
+      // no-op
+    }
   }
 
   getMe(): Observable<AdminModel> {

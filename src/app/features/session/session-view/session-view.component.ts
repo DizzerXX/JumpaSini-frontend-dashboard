@@ -25,11 +25,16 @@ import {
   switchMap,
 } from 'rxjs';
 
+import { AppError } from '../../../core/interceptors/error.interceptor';
 import { CollaborationService } from '../../../core/services/collaboration.service';
 import { RecommendationService } from '../../../core/services/recommendation.service';
 import { SessionService } from '../../../core/services/session.service';
 import { GeoService, PlaceSuggestion, ResolvedLocation } from '../../../core/services/geo.service';
-import { SessionSummary, VoteSummary } from '../../../core/models/collaboration.model';
+import {
+  RecommendedVenue,
+  SessionSummary,
+  VoteSummary,
+} from '../../../core/models/collaboration.model';
 import { VoteButtonsComponent } from '../../../shared/components/vote-buttons/vote-buttons.component';
 import { VoteTallyComponent } from '../../../shared/components/vote-tally/vote-tally.component';
 import { ConfirmedVenueComponent } from '../../../shared/components/confirmed-venue/confirmed-venue.component';
@@ -73,11 +78,16 @@ export class SessionViewComponent implements OnInit {
   isUpdating = signal(false);
   isCopied = signal(false);
   joinSuccessMessage = signal<string | null>(null);
+  /** Transient failure banner for vote/confirm actions. */
+  actionError = signal<string | null>(null);
+  /** True once this browser has joined; the backend rejects votes without it. */
+  hasJoined = signal(false);
 
   private updateTimer: ReturnType<typeof setTimeout> | null = null;
   private joinSuccessTimer: ReturnType<typeof setTimeout> | null = null;
   private copiedTimer: ReturnType<typeof setTimeout> | null = null;
   private expiryTimer: ReturnType<typeof setTimeout> | null = null;
+  private actionErrorTimer: ReturnType<typeof setTimeout> | null = null;
 
   private readonly pollInterval$ = new BehaviorSubject<number>(10_000);
 
@@ -174,7 +184,9 @@ export class SessionViewComponent implements OnInit {
       if (this.joinSuccessTimer) clearTimeout(this.joinSuccessTimer);
       if (this.copiedTimer) clearTimeout(this.copiedTimer);
       if (this.expiryTimer) clearTimeout(this.expiryTimer);
+      if (this.actionErrorTimer) clearTimeout(this.actionErrorTimer);
     });
+    this.hasJoined.set(this.collaborationService.canVote(this.shortCode));
     this.loadSummary();
     this.setupPolling();
     this.setupAddressSearch();
@@ -187,7 +199,7 @@ export class SessionViewComponent implements OnInit {
         this.isLoading.set(false);
         this.updateVenueNames(summary);
       },
-      error: (err: any) => {
+      error: (err: AppError) => {
         this.errorMessage.set(err?.message ?? 'Session not found.');
         this.isLoading.set(false);
       },
@@ -210,7 +222,7 @@ export class SessionViewComponent implements OnInit {
       this.recommendationService
         .getVenues(this.shortCode)
         .pipe(catchError(() => of([])), takeUntilDestroyed(this.destroyRef))
-        .subscribe((venues: any[]) => {
+        .subscribe((venues: RecommendedVenue[]) => {
           const names: Record<string, string> = {};
           for (const v of venues) {
             if (v.place_id && v.name) names[v.place_id] = v.name;
@@ -229,9 +241,18 @@ export class SessionViewComponent implements OnInit {
           interval(ms).pipe(
             switchMap(() => {
               if (this.isComplete()) return EMPTY;
-              return this.collaborationService
-                .getSessionSummary(this.shortCode)
-                .pipe(catchError(() => EMPTY));
+              return this.collaborationService.getSessionSummary(this.shortCode).pipe(
+                catchError((err: AppError) => {
+                  // A 404 means the session expired or was removed — say so instead of
+                  // leaving the user staring at silently stale data forever.
+                  if (err?.statusCode === 404) {
+                    this.errorMessage.set(
+                      'This session has expired or is no longer available.',
+                    );
+                  }
+                  return EMPTY;
+                }),
+              );
             }),
           ),
         ),
@@ -314,12 +335,14 @@ export class SessionViewComponent implements OnInit {
           this.joinAddressQuery.set('');
           this.joinLocation.set(null);
           this.isJoining.set(false);
+          // The access_token was persisted by SessionService — voting is now allowed.
+          this.hasJoined.set(this.collaborationService.canVote(this.shortCode));
           this.joinSuccessMessage.set("You've been added! Results will update shortly.");
           if (this.joinSuccessTimer) clearTimeout(this.joinSuccessTimer);
           this.joinSuccessTimer = setTimeout(() => this.joinSuccessMessage.set(null), 3000);
           this.loadSummary();
         },
-        error: (err: any) => {
+        error: (err: AppError) => {
           this.joinError.set(err?.message ?? 'Failed to join. Please try again.');
           this.isJoining.set(false);
         },
@@ -327,6 +350,8 @@ export class SessionViewComponent implements OnInit {
   }
 
   castVote(placeId: string, venueName: string, vote: string): void {
+    this.actionError.set(null);
+
     this.collaborationService
       .castVote(this.shortCode, {
         googlePlaceId: placeId,
@@ -340,17 +365,30 @@ export class SessionViewComponent implements OnInit {
             this.summary.set({ ...current, vote_summary: voteSummary });
           }
         },
-        error: () => {},
+        error: (err: AppError) => {
+          this.showActionError(err?.message ?? 'Could not save your vote. Please try again.');
+        },
       });
   }
 
   confirmVenue(placeId: string): void {
+    this.actionError.set(null);
+
     this.collaborationService
       .confirmVenue(this.shortCode, { googlePlaceId: placeId })
       .subscribe({
         next: () => this.loadSummary(),
-        error: () => {},
+        error: (err: AppError) => {
+          this.showActionError(err?.message ?? 'Could not confirm the venue. Please try again.');
+        },
       });
+  }
+
+  /** Surfaces a transient failure banner; previously these errors were swallowed. */
+  private showActionError(message: string): void {
+    this.actionError.set(message);
+    if (this.actionErrorTimer) clearTimeout(this.actionErrorTimer);
+    this.actionErrorTimer = setTimeout(() => this.actionError.set(null), 5000);
   }
 
   startVoting(): void {
